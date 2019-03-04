@@ -15,9 +15,9 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
 `docker exec -it ffabi_gym bash`
 
-# Clone the choosen implemetation of the World Models concept
+# Clone the implemetation of the World Models concept
 
-`git clone https://github.com/AppliedDataSciencePartners/WorldModels.git`
+`git clone https://github.com/ffabi/SemesterProject.git`
 
 # Running
 
