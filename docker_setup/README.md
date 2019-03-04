@@ -20,3 +20,7 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 # Clone the choosen implemetation of the World Models concept
 
 `git clone https://github.com/AppliedDataSciencePartners/WorldModels.git`
+
+# Install requirements for this specific project
+
+`pip3 install -r WorldModels/requirements.txt`
