@@ -1,10 +1,13 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 MAINTAINER ffabi
 
-RUN apt update && apt install -y python3.6 python3-pip python3-dev git
-RUN pip3 install --upgrade pip
-RUN apt install -y gcc build-essential freeglut3 freeglut3-dev libxi-dev libxmu-dev
+RUN apt update
+RUN apt install -y python3.6 python3-pip python3-dev
+RUN apt install -y libopenmpi-dev ssh sudo nano gcc cmake git
+RUN apt install -y build-essential freeglut3 freeglut3-dev libxi-dev libxmu-dev
 
+RUN pip3 install --upgrade pip
+RUN pip3 install mpi4py pympler cma
 RUN pip3 install tensorflow-gpu keras
 
 #RUN pip3 install torchvision_nightly
@@ -20,8 +23,7 @@ RUN apt install -y python3-opengl xvfb fontconfig
 COPY jupyter_notebook_config.py /root/.jupyter/jupyter_notebook_config.py
 COPY jupyter_notebook_config.json /root/.jupyter/jupyter_notebook_config.json
 
-RUN apt install -y libopenmpi-dev ssh sudo nano
-RUN pip3 install mpi4py pympler cma
+
 
 RUN echo "PermitRootLogin yes\nSubsystem sftp internal-sftp" > /etc/ssh/sshd_config
 RUN echo "root:init" | chpasswd
