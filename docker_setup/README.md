@@ -3,6 +3,10 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
 # Building the image
 
+`git clone https://github.com/ffabi/SemesterProject.git`
+
+`cd SemesterProject/docker_setup`
+
 `docker build -t ffabi/gym:latest .`
 
 # Running the docker container
