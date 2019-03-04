@@ -1,4 +1,6 @@
-# Building image
+# Pulling or building the image
+
+`docker pull ffabi/gym:latest`
 
 `docker build -t ffabi/gym:latest .`
 
