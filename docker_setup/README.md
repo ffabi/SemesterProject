@@ -21,6 +21,6 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
 `git clone https://github.com/AppliedDataSciencePartners/WorldModels.git`
 
-# Install requirements for this specific project
+# Run the rest according to this guide:
 
-`pip3 install -r WorldModels/requirements.txt`
+<https://medium.com/applied-data-science/how-to-build-your-own-world-model-using-python-and-keras-64fb388ba459>
