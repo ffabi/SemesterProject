@@ -4,7 +4,7 @@ MAINTAINER ffabi
 RUN apt update
 RUN apt install -y python3.6 python3-pip python3-dev
 RUN apt install -y libopenmpi-dev ssh sudo nano gcc cmake git
-RUN apt install -y build-essential freeglut3 freeglut3-dev libxi-dev libxmu-dev
+RUN apt install -y build-essential freeglut3 freeglut3-dev libxi-dev libxmu-dev zlib1g-dev
 
 RUN pip3 install --upgrade pip
 RUN pip3 install mpi4py pympler cma
