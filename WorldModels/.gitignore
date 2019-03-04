@@ -3,7 +3,7 @@ __pycache__/
 archive/
 zoo/
 videos/
-data/
+data/*
 history.txt
 vae/weights.h5
 rnn/weights.h5
