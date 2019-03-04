@@ -7,7 +7,9 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
 # Running the docker container
 
-`nvidia-docker create -p 8192:8192 -p 8193:22 --name ffabi_gym ffabi/gym:latest`
+`mkdir ./ffabi_shared_folder`
+
+`nvidia-docker create -p 8192:8192 -p 8193:22 --name ffabi_gym -v ./ffabi_shared_folder:/root/ffabi_shared_folder ffabi/gym:latest`
 
 `nvidia-docker start ffabi_gym`
 
