@@ -1,3 +1,6 @@
+# Prerequisites
+This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker version 2 installed on the host machine
+
 # Pulling or building the image
 
 `docker pull ffabi/gym:latest`
