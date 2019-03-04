@@ -1,10 +1,11 @@
 FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
 MAINTAINER ffabi
 
-RUN apt update && apt install -y python3.6 python3-pip python3-dev
+RUN apt update && apt install -y python3.6 python3-pip python3-dev git
 RUN pip3 install --upgrade pip
+RUN apt install -y gcc build-essential freeglut3 freeglut3-dev libxi-dev libxmu-dev
 
-RUN pip3 install tensorflow-gpu keras numpy
+RUN pip3 install tensorflow-gpu keras
 
 #RUN pip3 install torchvision_nightly
 #RUN pip3 install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html

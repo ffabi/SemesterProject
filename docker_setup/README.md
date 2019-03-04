@@ -15,4 +15,4 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
 # Attach to the container
 
-`docker attach ffabi_gym`
+`docker exec -it ffabi_gym bash`
