@@ -1,4 +1,12 @@
-* [Building the image](#building)
+- [Prerequisites](#prerequisites)
+- [Pulling the image](#pulling-the-image)
+- [Building the image](#building-the-image)
+- [Running the docker container](#running-the-docker-container)
+- [Attach to the container](#attach-to-the-container)
+- [Clone the implemetation of the World Models concept](#clone-the-implemetation-of-the-world-models-concept)
+- [Running AppliedDataSciencePartners - WorldModels](#running-applied-data-science-partners-world-models)
+- [Running hardmaru - WordlModels](#running-hardmaru-wordl-models)
+
 # Prerequisites
 This specific image needs a CUDA capable GPU with CUDA version 9.0 and nvidia-docker installed on the host machine
 # Pulling the image
