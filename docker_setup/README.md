@@ -1,4 +1,4 @@
-[[toc]]
+* [Building the image](#building)
 # Prerequisites
 This specific image needs a CUDA capable GPU with CUDA version 9.0 and nvidia-docker installed on the host machine
 # Pulling the image
