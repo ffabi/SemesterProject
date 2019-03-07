@@ -31,6 +31,7 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
 # Running
 
+mkdir data
 
 xvfb-run -a -s "-screen 0 1400x900x24" python3 01_generate_data.py car_racing --total_episodes 200 --start_batch 0 --time_steps 300
 
