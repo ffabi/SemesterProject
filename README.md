@@ -1,4 +1,7 @@
+[[toc]]
 # SemesterProject
+
+## Munkaterv
 - [x] Témaválasztás, Konzulensválasztás
 - [x] Irodalomkutatás az önvezetés és a megerősítéses tanulás témakörében, munkaterv elkészítése
 - [x] Az OpenAI Gym szimulációs környezet megismerése
@@ -13,4 +16,4 @@
 - [ ] Dokumentáció leadása
 - [ ] A dokumentáció kiegészítése, hibáinak javítása
 - [ ] Szóbeli beszámoló elkészítése
-- [ ] Beszámoló megírása a Smartlab blogjára
+- [ ] Beszámoló megírása a SmartLab blogjára
