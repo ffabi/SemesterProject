@@ -8,7 +8,7 @@ RUN apt install -y build-essential freeglut3 freeglut3-dev libxi-dev libxmu-dev 
 
 RUN pip3 install --upgrade pip
 RUN pip3 install mpi4py pympler cma
-RUN pip3 install tensorflow-gpu keras
+RUN pip3 install tensorflow-gpu==1.12.0 keras
 
 #RUN pip3 install torchvision_nightly
 #RUN pip3 install torch_nightly -f https://download.pytorch.org/whl/nightly/cu100/torch_nightly.html
@@ -24,11 +24,9 @@ COPY jupyter_notebook_config.py /root/.jupyter/jupyter_notebook_config.py
 COPY jupyter_notebook_config.json /root/.jupyter/jupyter_notebook_config.json
 
 
-
 RUN echo "PermitRootLogin yes\nSubsystem sftp internal-sftp" > /etc/ssh/sshd_config
 RUN echo "root:init" | chpasswd
 
 WORKDIR /root
-EXPOSE 8192
 
 CMD service ssh start && jupyter notebook --allow-root
