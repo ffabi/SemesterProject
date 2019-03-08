@@ -415,8 +415,8 @@ def mpi_fork(n):
       OMP_NUM_THREADS="1",
       IN_MPI="1"
     )
-    print( ["mpirun", "-np", str(n), sys.executable] + sys.argv)
-    subprocess.check_call(["mpirun", "-np", str(n), sys.executable] +['-u']+ sys.argv, env=env)
+    print( ["mpirun", "--allow-run-as-root", "-np", str(n), sys.executable] + sys.argv)
+    subprocess.check_call(["mpirun","--allow-run-as-root", "-np", str(n), sys.executable] +['-u']+ sys.argv, env=env)
     return "parent"
   else:
     global nworkers, rank
@@ -432,7 +432,7 @@ if __name__ == "__main__":
   parser.add_argument('-o', '--optimizer', type=str, help='ses, pepg, openes, ga, cma.', default='cma')
   parser.add_argument('--num_episode', type=int, default=16, help='num episodes per trial')
   parser.add_argument('--eval_steps', type=int, default=25, help='evaluate every eval_steps step')
-  parser.add_argument('-n', '--num_worker', type=int, default=64)
+  parser.add_argument('-n', '--num_worker', type=int, default=2)
   parser.add_argument('-t', '--num_worker_trial', type=int, help='trials per worker', default=1)
   parser.add_argument('--antithetic', type=int, default=1, help='set to 0 to disable antithetic sampling')
   parser.add_argument('--cap_time', type=int, default=0, help='set to 0 to disable capping timesteps to 2x of average.')
