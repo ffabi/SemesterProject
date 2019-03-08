@@ -5,7 +5,7 @@
 - [x] Témaválasztás, Konzulensválasztás
 - [x] Irodalomkutatás az önvezetés és a megerősítéses tanulás témakörében, munkaterv elkészítése
 - [x] Az OpenAI Gym szimulációs környezet megismerése
-- [ ] A tanításhoz szükséges környezet telepítése, beállítása (Docker konténerben)
+- [x] A tanításhoz szükséges környezet telepítése, beállítása (Docker konténerben)
 - [ ] A korábbi tanulmányok közül 1-2 implementálása, az ágensek teljesítményeinek tesztelése és összehasonlítása
 - [ ] Az implementált ágensek hibáinak és erősségeinek feltárása
 - [ ] A teljes dokumentáció 40%-nak leadása a 6. hét végére
