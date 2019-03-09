@@ -28,7 +28,7 @@ def main(args):
 
         for env_name in config.train_envs:
             try:
-                new_data = np.load('./data/obs_data_' + env_name + '_' + str(batch_num) + '.npy')
+                new_data = np.load('./data/obs_data_' + env_name + '_' + str(batch_num) + '.npz')
                 if first_item:
                     data = new_data
                     first_item = False

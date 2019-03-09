@@ -1,4 +1,4 @@
-#xvfb-run -s "-screen 0 1400x900x24" python generate_data.py car_racing --total_episodes 200 --start_batch 0 --time_steps 300
+# xvfb-run -s "-screen 0 1400x900x24" python generate_data.py car_racing --total_episodes 200 --start_batch 0 --time_steps 300
 
 import numpy as np
 import random
@@ -39,21 +39,20 @@ def main(args):
             action_data = []
 
             for i_episode in range(batch_size):
-                print('-----')
+                print('----------')
                 observation = env.reset()
                 observation = config.adjust_obs(observation)
 
                 # plt.imshow(observation)
                 # plt.show()
 
-                env.render()
                 done = False
                 action = env.action_space.sample()
                 t = 0
                 obs_sequence = []
                 action_sequence = []
 
-                while t < time_steps: #and not done:
+                while t < time_steps and not done:
                     t = t + 1
                     
                     action = config.generate_data_action(t, action)
@@ -76,21 +75,21 @@ def main(args):
                 s = s + 1
 
             print("Saving dataset for batch {}".format(batch))
-            np.save('./data/obs_data_' + current_env_name + '_' + str(batch), obs_data)
-            np.save('./data/action_data_' + current_env_name + '_' + str(batch), action_data)
+            np.savez_compressed('./data/obs_data_' + current_env_name + '_' + str(batch), obs_data)
+            np.savez_compressed('./data/action_data_' + current_env_name + '_' + str(batch), action_data)
 
             batch = batch + 1
 
         env.close()
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description=('Create new training data'))
-  parser.add_argument('env_name', default="car_racing", type=str, help='name of environment')
+  parser = argparse.ArgumentParser(description= 'Create new training data')
+  parser.add_argument('--env_name', default="car_racing", type=str, help='name of environment')
   parser.add_argument('--total_episodes', type=int, default = 200, help='total number of episodes to generate')
   parser.add_argument('--start_batch', type=int, default = 0, help='start_batch number')
   parser.add_argument('--time_steps', type=int, default = 300, help='how many timesteps at start of episode?')
   parser.add_argument('--render', action='store_true', help='render the env as data is generated')
-  parser.add_argument('--batch_size', type=int, default = 200, help='how many episodes in a batch (one file)')
+  parser.add_argument('--batch_size', type=int, default = 100, help='how many episodes in a batch (one file)')
   parser.add_argument('--run_all_envs', action='store_true', help='if true, will ignore env_name and loop over all envs in train_envs variables in config.py')
 
   args = parser.parse_args()
