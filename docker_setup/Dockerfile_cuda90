@@ -27,6 +27,8 @@ COPY jupyter_notebook_config.json /root/.jupyter/jupyter_notebook_config.json
 RUN echo "PermitRootLogin yes\nSubsystem sftp internal-sftp" > /etc/ssh/sshd_config
 RUN echo "root:init" | chpasswd
 
+RUN pip3 install --upgrade tornado==5.1.1
+
 WORKDIR /root
 
 CMD service ssh start && jupyter notebook --allow-root
