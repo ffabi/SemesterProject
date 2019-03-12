@@ -22,7 +22,7 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 
 Z_DIM = 32
 
-EPOCHS = 5
+EPOCHS = 1
 BATCH_SIZE = 32
 
 def sampling(args):
@@ -105,7 +105,7 @@ class VAE():
             
         vae.compile(optimizer=Adam(), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
-        return (vae,vae_encoder, vae_decoder)
+        return vae, vae_encoder, vae_decoder
 
 
     def set_weights(self, filepath):

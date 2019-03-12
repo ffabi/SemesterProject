@@ -28,6 +28,7 @@ RUN echo "PermitRootLogin yes\nSubsystem sftp internal-sftp" > /etc/ssh/sshd_con
 RUN echo "root:init" | chpasswd
 
 RUN pip3 install --upgrade tornado==5.1.1
+RUN pip3 install matplotlib
 
 WORKDIR /root
 

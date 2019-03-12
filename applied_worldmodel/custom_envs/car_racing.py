@@ -430,13 +430,13 @@ class CarRacing(gym.Env):
         gl.glVertex3f(+PLAYFIELD, -PLAYFIELD, 0)
         gl.glVertex3f(-PLAYFIELD, -PLAYFIELD, 0)
         gl.glColor4f(0.4, 0.9, 0.4, 1.0)
-        k = PLAYFIELD/20.0
-        for x in range(-20, 20, 2):
-            for y in range(-20, 20, 2):
-                gl.glVertex3f(k*x + k, k*y + 0, 0)
-                gl.glVertex3f(k*x + 0, k*y + 0, 0)
-                gl.glVertex3f(k*x + 0, k*y + k, 0)
-                gl.glVertex3f(k*x + k, k*y + k, 0)
+        # k = PLAYFIELD/20.0
+        # for x in range(-20, 20, 2):
+        #     for y in range(-20, 20, 2):
+        #         gl.glVertex3f(k*x + k, k*y + 0, 0)
+        #         gl.glVertex3f(k*x + 0, k*y + 0, 0)
+        #         gl.glVertex3f(k*x + 0, k*y + k, 0)
+        #         gl.glVertex3f(k*x + k, k*y + k, 0)
         for poly, color in self.road_poly:
             gl.glColor4f(color[0], color[1], color[2], 1)
             for p in poly:
@@ -479,6 +479,7 @@ class CarRacing(gym.Env):
 
 if __name__=="__main__":
     from pyglet.window import key
+    pyglet.options['debug_gl'] = False
     a = np.array( [0.0, 0.0, 0.0] )
     def key_press(k, mod):
         global restart

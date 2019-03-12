@@ -1,4 +1,4 @@
-#python 02_train_vae.py --new_model
+#xvfb-run -a -s "-screen 0 1400x900x24" python3 02_train_vae.py --start_batch 0 --max_batch $(ls data | grep obs | wc -l) --new_model
 
 from vae.arch import VAE
 import argparse
@@ -13,8 +13,6 @@ def main(args):
 
     vae = VAE()
 
-
-
     if not new_model:
         try:
             vae.set_weights('./vae/weights.h5')
@@ -28,7 +26,8 @@ def main(args):
 
         for env_name in config.train_envs:
             try:
-                new_data = np.load('./data/obs_data_' + env_name + '_' + str(batch_num) + '.npz')
+                new_data = np.load('./data/obs_data_' + env_name + '_' + str(batch_num) + '.npz')["arr_0"]
+                print(new_data.shape)
                 if first_item:
                     data = new_data
                     first_item = False
@@ -38,16 +37,16 @@ def main(args):
             except:
                 pass
 
-        if first_item == False: # i.e. data has been found for this batch number
+        if not first_item: # i.e. data has been found for this batch number
             data = np.array([item for obs in data for item in obs])
             vae.train(data)
         else:
             print('no data found for batch number {}'.format(batch_num))
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=('Train VAE'))
+    parser = argparse.ArgumentParser(description= 'Train VAE')
     parser.add_argument('--start_batch', type=int, default = 0, help='The start batch number')
-    parser.add_argument('--max_batch', type=int, default = 0, help='The max batch number')
+    parser.add_argument('--max_batch', type=int, default = 10, help='The max batch number') # --max_batch $(ls data | grep obs | wc -l)
     parser.add_argument('--new_model', action='store_true', help='start a new model from scratch?')
     args = parser.parse_args()
 

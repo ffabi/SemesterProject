@@ -24,8 +24,8 @@ def main(args):
 
         for env_name in config.train_envs:
             try:
-                new_obs_data = np.load('./data/obs_data_' + env_name + '_'  + str(batch_num) + '.npy')
-                new_action_data = np.load('./data/action_data_' + env_name + '_'  + str(batch_num) + '.npy')
+                new_obs_data = np.load('./data/obs_data_' + env_name + '_'  + str(batch_num) + '.npz')["arr_0"]
+                new_action_data = np.load('./data/action_data_' + env_name + '_'  + str(batch_num) + '.npz')["arr_0"]
                 if first_item:
                     obs_data = new_obs_data
                     action_data = new_action_data
