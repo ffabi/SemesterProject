@@ -96,6 +96,7 @@ class VAE():
             y_pred_flat = K.flatten(y_pred)
 
             return 10 * K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
+        
 
         def vae_kl_loss(y_true, y_pred):
             return - 0.5 * K.mean(1 + vae_z_log_var - K.square(vae_z_mean) - K.exp(vae_z_log_var), axis = -1)
@@ -133,7 +134,7 @@ class VAE():
         rnn_input = []
         rnn_output = []
 
-        for i, j in zip(obs_data, action_data):    
+        for i, j in zip(obs_data, action_data):
             rnn_z_input = self.encoder.predict(np.array(i))
             conc = [np.concatenate([x,y]) for x, y in zip(rnn_z_input, j)]
             rnn_input.append(conc[:-1])
