@@ -59,8 +59,9 @@ def main(args):
                     observation, reward, done, info = env.step(action)
                     observation = config.adjust_obs(observation)
                     
-                    obs_sequence.append(observation) # [:56]?
-                    action_sequence.append(action)
+                    if time>30:
+                        obs_sequence.append(observation) # [:56]?
+                        action_sequence.append(action)
                     
                     if render:
                         env.render()
@@ -85,11 +86,11 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = ('Create new training data'))
     parser.add_argument('--env_name', default = "car_racing", type = str, help = 'name of environment')
-    parser.add_argument('--total_episodes', type = int, default = 500, help = 'total number of episodes to generate')
+    parser.add_argument('--total_episodes', type = int, default = 640, help = 'total number of episodes to generate')
     parser.add_argument('--start_batch', type = int, default = 0, help = 'start_batch number')
-    parser.add_argument('--time_steps', type = int, default = 200, help = 'how many timesteps at start of episode?')
+    parser.add_argument('--time_steps', type = int, default = 230, help = 'how many timesteps at start of episode?')
     parser.add_argument('--render', action = 'store_true', help = 'render the env as data is generated')
-    parser.add_argument('--batch_size', type = int, default = 50, help = 'how many episodes in a batch (one file)')
+    parser.add_argument('--batch_size', type = int, default = 64, help = 'how many episodes in a batch (one file)')
     parser.add_argument('--run_all_envs', action = 'store_true',
                         help = 'if true, will ignore env_name and loop over all envs in train_envs variables in config.py')
     

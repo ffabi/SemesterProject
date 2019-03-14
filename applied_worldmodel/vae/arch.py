@@ -8,14 +8,14 @@ from keras.optimizers import Adam
 
 INPUT_DIM = (64,64,3)
 
-CONV_FILTERS = [32,64,64,128]
+CONV_FILTERS = [32,64,128,256]
 CONV_KERNEL_SIZES = [4,4,4,4]
 CONV_STRIDES = [2,2,2,2]
 CONV_ACTIVATIONS = ['relu','relu','relu','relu']
 
 DENSE_SIZE = 1024
 
-CONV_T_FILTERS = [64,64,32,3]
+CONV_T_FILTERS = [128,64,32,3]
 CONV_T_KERNEL_SIZES = [5,5,6,6]
 CONV_T_STRIDES = [2,2,2,2]
 CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
@@ -23,7 +23,7 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 Z_DIM = 32
 
 EPOCHS = 1
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -31,7 +31,8 @@ def sampling(args):
     return z_mean + K.exp(z_log_var / 2) * epsilon
 
 class VAE():
-    def __init__(self):
+    def __init__(self, zero_deviation = False):
+        self.zero_deviation = zero_deviation
         self.models = self._build()
         self.model = self.models[0]
         self.encoder = self.models[1]
@@ -39,6 +40,7 @@ class VAE():
 
         self.input_dim = INPUT_DIM
         self.z_dim = Z_DIM
+        
 
 
     def _build(self):
@@ -54,6 +56,7 @@ class VAE():
         vae_z_log_var = Dense(Z_DIM)(vae_z_in)
 
         vae_z = Lambda(sampling)([vae_z_mean, vae_z_log_var])
+
         vae_z_input = Input(shape=(Z_DIM,))
 
         # we instantiate these layers separately so as to reuse them later
@@ -95,16 +98,18 @@ class VAE():
             y_true_flat = K.flatten(y_true)
             y_pred_flat = K.flatten(y_pred)
 
-            return 10 * K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
+            return K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
         
 
         def vae_kl_loss(y_true, y_pred):
             return - 0.5 * K.mean(1 + vae_z_log_var - K.square(vae_z_mean) - K.exp(vae_z_log_var), axis = -1)
 
+
         def vae_loss(y_true, y_pred):
-            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred)
+            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / 64
             
         vae.compile(optimizer=Adam(), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        
 
         return vae, vae_encoder, vae_decoder
 
@@ -114,15 +119,19 @@ class VAE():
 
     def train(self, data, validation_split = 0.2):
 
-        earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-        callbacks_list = [earlystop]
+        # datagen
+
+
+        # earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+        # callbacks_list = [earlystop]
 
         self.model.fit(data, data,
                 shuffle=True,
                 epochs=EPOCHS,
                 batch_size=BATCH_SIZE,
-                validation_split=validation_split,
-                callbacks=callbacks_list)
+                validation_split=validation_split
+                # callbacks=callbacks_list
+                       )
         
         self.model.save_weights('./vae/weights.h5')
 
