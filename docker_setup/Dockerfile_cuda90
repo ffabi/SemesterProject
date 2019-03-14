@@ -32,4 +32,6 @@ RUN pip3 install matplotlib
 
 WORKDIR /root
 
+VOLUME /ffabi_shared_folder
+
 CMD service ssh start && jupyter notebook --allow-root
