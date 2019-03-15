@@ -117,7 +117,7 @@ class VAE():
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
 
-    def train(self, data, validation_split = 0.2):
+    def train(self, max_batch, validation_split = 0.2):
 
         # datagen
 
