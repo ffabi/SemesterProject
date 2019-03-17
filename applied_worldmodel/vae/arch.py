@@ -23,7 +23,7 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 Z_DIM = 32
 
 EPOCHS = 1
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -31,8 +31,7 @@ def sampling(args):
     return z_mean + K.exp(z_log_var / 2) * epsilon
 
 class VAE():
-    def __init__(self, zero_deviation = False):
-        self.zero_deviation = zero_deviation
+    def __init__(self):
         self.models = self._build()
         self.model = self.models[0]
         self.encoder = self.models[1]
@@ -98,7 +97,8 @@ class VAE():
             y_true_flat = K.flatten(y_true)
             y_pred_flat = K.flatten(y_pred)
 
-            return K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
+            # return K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
+            return K.mean(K.abs(y_true_flat - y_pred_flat), axis = -1)
         
 
         def vae_kl_loss(y_true, y_pred):
@@ -106,9 +106,9 @@ class VAE():
 
 
         def vae_loss(y_true, y_pred):
-            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / 64
+            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / 256
             
-        vae.compile(optimizer=Adam(), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        vae.compile(optimizer=Adam(lr=0.0001), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
         
 
         return vae, vae_encoder, vae_decoder
@@ -117,7 +117,7 @@ class VAE():
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
 
-    def train(self, data, validation_split = 0.2):
+    def train(self, data, validation_split = 0.3):
 
         # datagen
 
