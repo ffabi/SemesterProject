@@ -6,6 +6,7 @@ from keras import backend as K
 from keras.callbacks import EarlyStopping, TensorBoard
 from keras.optimizers import Adam
 import datetime
+import pickle
 
 
 INPUT_DIM = (64,64,3)
@@ -25,9 +26,11 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 Z_DIM = 32
 
 EPOCHS = 1
-BATCH_SIZE = 4
+BATCH_SIZE = 8
 
-NAME = "VAE-original-size-{}".format(str(datetime.datetime.now())[:16])
+KL_DIVIDER = 2048
+
+NAME = "VAE-original-date:{}-KL_DIVIDER:{}-BATCH_SIZE:{}".format(str(datetime.datetime.now())[:16], KL_DIVIDER, BATCH_SIZE)
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -110,7 +113,7 @@ class VAE():
 
 
         def vae_loss(y_true, y_pred):
-            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / 256
+            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / KL_DIVIDER
             
         vae.compile(optimizer=Adam(lr=0.0001), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
         
@@ -128,22 +131,28 @@ class VAE():
 
         # earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
         
-        tensorboard = TensorBoard(log_dir='./log/{}'.format(NAME), histogram_freq=1,
-                                  write_graph=False, write_images=False, write_grads=False,
-                                  batch_size = BATCH_SIZE,
-                                  embeddings_freq = 0
+        tensorboard = TensorBoard(log_dir='./log/{}'.format(NAME),
+                                  batch_size = 1,
+                                  write_graph=True,
+                                  write_grads=False,
+                                  write_images=False,
+                                  histogram_freq = 0,
+
                                   )
         
         callbacks_list = [tensorboard]
 
-        self.model.fit(data, data,
-                shuffle=True,
-                epochs=EPOCHS,
-                batch_size=BATCH_SIZE,
-                validation_split=validation_split,
-                callbacks=callbacks_list
+        print(NAME)
+
+        history = self.model.fit(data, data,
+                        shuffle=True,
+                        epochs=EPOCHS,
+                        batch_size=BATCH_SIZE,
+                        validation_split=validation_split,
+                        callbacks=callbacks_list,
                        )
-        
+        # with open('./log/history_' + NAME, 'wb') as pickle_file:
+        #     pickle.dump(history, pickle_file)
         self.model.save_weights('./vae/weights.h5')
 
     def save_weights(self, filepath):

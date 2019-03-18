@@ -10,3 +10,5 @@ hardmaru_worldmodel/carracing/record/
 hardmaru_worldmodel/\.idea/
 
 applied_worldmodel/log/
+
+*.h5
