@@ -3,8 +3,10 @@ import numpy as np
 from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Lambda, Reshape
 from keras.models import Model
 from keras import backend as K
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, TensorBoard
 from keras.optimizers import Adam
+import datetime
+
 
 INPUT_DIM = (64,64,3)
 
@@ -24,6 +26,8 @@ Z_DIM = 32
 
 EPOCHS = 1
 BATCH_SIZE = 4
+
+NAME = "VAE-original-size-{}".format(str(datetime.datetime.now())[:16])
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -123,14 +127,21 @@ class VAE():
 
 
         # earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-        # callbacks_list = [earlystop]
+        
+        tensorboard = TensorBoard(log_dir='./log/{}'.format(NAME), histogram_freq=1,
+                                  write_graph=False, write_images=False, write_grads=False,
+                                  batch_size = BATCH_SIZE,
+                                  embeddings_freq = 0
+                                  )
+        
+        callbacks_list = [tensorboard]
 
         self.model.fit(data, data,
                 shuffle=True,
                 epochs=EPOCHS,
                 batch_size=BATCH_SIZE,
-                validation_split=validation_split
-                # callbacks=callbacks_list
+                validation_split=validation_split,
+                callbacks=callbacks_list
                        )
         
         self.model.save_weights('./vae/weights.h5')
