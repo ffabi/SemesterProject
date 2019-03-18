@@ -52,11 +52,6 @@ class oldDataGenerator(keras.utils.Sequence):
             np.random.shuffle(self.indexes)
             
             
-            
-            
-            
-            
-            
 def train_set_counter(file_id):
     new_data = np.load('./data/obs_data_car_racing_' + str(file_id) + '.npz')["arr_0"]
     data = np.array([item for obs in new_data for item in obs])
@@ -68,7 +63,7 @@ class DataGenerator(keras.utils.Sequence):
     
     def __init__(self, max_batch, set_type = "debug", batch_size = 64, shuffle = True):
         """Initialization"""
-
+        
         self.batch_size = batch_size
         self.shuffle = shuffle
         
@@ -77,7 +72,7 @@ class DataGenerator(keras.utils.Sequence):
         self.statistics = self.__count_all_frames__(set_type).T
         self.total_frame_count = sum(self.statistics.T[1])
         np.random.shuffle(self.statistics)
-        # self.mapping = self.build_mapping()
+        self.mapping = self.build_mapping()
         
         
         # self.statistics = self.statistics/64
@@ -117,26 +112,15 @@ class DataGenerator(keras.utils.Sequence):
     
     def __getitem__(self, index):
         """Generate one batch of data"""
-        # TODO
-        # Generate indexes of the batch
-        indexes = self.indexes[index * self.batch_size:(index + 1) * self.batch_size]
+
+        batch = []
         
-        ids = [self.dataset["frame"][k] for k in indexes]
-        datapoints = [self.dataset["data"][k] for k in indexes]
-        
-        """Generates data containing batch_size samples"""
-        # Initialization
-        
-        X = np.empty((self.batch_size, *self.dim), dtype = float)
-        Y = np.empty((self.batch_size, *(1,)), dtype = float)
-        # Generate data
-        for i, ID in enumerate(ids):
-            img = img_to_array(load_img('dataset/resized_frames/frame_' + str(ID) + '.png')) / 255.0
-            
-            X[i,] = img
-            Y[i,] = datapoints[i]
-        
-        return X, Y
+        for description in self.mapping[index]:
+            file = np.load('./data/obs_data_carracing_' + str(description[0]) + '.npz')["arr_0"]
+            frames = np.array([item for obs in file for item in obs])
+            batch.append(frames[description[1] : description[2]])
+
+        return batch, batch
     
     def on_epoch_end(self):
         """Updates indexes after each epoch"""
@@ -156,21 +140,26 @@ class DataGenerator(keras.utils.Sequence):
         for batch_index in range(self.__len__()):
     
             descriptions = []
-    
+            
             start_frame_index = frame_counter
-    
+            
             for frame_index in range(self.batch_size):
-                if not frame_counter < self.statistics[stat_index][1]:
-                    descriptions.append((self.statistics[stat_index][0], start_frame_index, frame_counter))
-                    frame_counter = 0
-                    continue
                 
+                if not frame_counter < self.statistics[stat_index][1]:
+                    
+                    descriptions.append((self.statistics[stat_index][0], start_frame_index, frame_counter))
+                    
+                    frame_counter = 0
+                    stat_index += 1
+                    
+                    if stat_index == len(self.statistics):
+                        break
+                    
+                    continue
+                    
                 frame_counter += 1
-    
-    
-    
-            mapping.append((batch_index, descriptions))
-    
+                
+            mapping.append(descriptions)
     
             #
             # if frame_counter + self.batch_size < self.statistics[stat_index][1]:
@@ -183,12 +172,11 @@ class DataGenerator(keras.utils.Sequence):
             #
             #
     
-            mapping.append((batch_index, descriptions))
             
         
         print(mapping)
         
-        return np.array(mapping) # [(batch_index, [(fileindex, start_frame_index, end_frame_index), (fileindex2, start_frame_index2, end_frame_index2)])]
+        return np.array(mapping) # [[(fileindex, start_frame_index, end_frame_index), (fileindex2, start_frame_index2, end_frame_index2)])]
     
     
 if __name__ == '__main__':
