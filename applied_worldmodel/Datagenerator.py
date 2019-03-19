@@ -13,31 +13,27 @@ class DataGenerator(keras.utils.Sequence):
     
     def __init__(self, max_batch, set_type = "debug", batch_size = 64, shuffle = True):
         """Initialization"""
-        
+    
         self.batch_size = batch_size
         self.shuffle = shuffle
-        
+    
         self.num_files = max_batch
-        
-        self.statistics = self.__count_all_frames__(set_type).T
+        self.set_type = set_type
+        if set_type=="debug": print("Building statistics")
+        self.statistics = self.__build_statistics__(set_type).T
         self.total_frame_count = sum(self.statistics.T[1])
         np.random.shuffle(self.statistics)
-        self.mapping = self.build_mapping(debug = set_type == "debug")
+        if set_type == "debug": print("Building mapping")
+        self.mapping = self.__build_mapping__()
+    
+        self.file_index = -1
+    
+    
+    def __build_statistics__(self, set_type):
         
-        
-        # self.statistics = self.statistics/64
-        #
-        # for i in range(1, len(self.statistics)):
-        #     self.statistics[i] += self.statistics[i-1]
-    
-    
-    
-    def __count_all_frames__(self, set_type):
         if set_type == "debug":
-            # return np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
-            #                  [12592, 12356, 12582, 12342, 12421, 12325, 12487, 12527, 12152, 12383, 12372, 12325, 12352, 12442, 12230, 12530, 12458, 12373, 12482]])
-            return np.array([[0, 1],
-                             [20, 20]])
+            return np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+                             [12389, 12507, 12604, 12237, 12562, 12500, 12158, 12765, 12418, 12230, ]])
         
         elif set_type== "train":
             #count the train set using a different thread so the memory will be freed
@@ -56,6 +52,9 @@ class DataGenerator(keras.utils.Sequence):
             new_data = np.load('./data/obs_test.npz')["arr_0"]
             data = np.array([item for obs in new_data for item in obs])
             return np.array([[0], [data.shape[0]]])
+        
+        else:
+            raise AttributeError
     
     
     def __len__(self):
@@ -66,25 +65,38 @@ class DataGenerator(keras.utils.Sequence):
         """Generate one batch of data"""
         
         batch = []
-        
         for description in self.mapping[index]:
-            file = np.load('./data/obs_data_carracing_' + str(description[0]) + '.npz')["arr_0"]
-            frames = np.array([item for obs in file for item in obs])
-            batch.append(frames[description[1] : description[2]])
+            if self.file_index == description[0]:
+                batch.extend(self.frames[description[1]: description[2]])
+            
+            else:
+                if self.set_type == "valid":
+                    file = np.load('./data/obs_test.npz')["arr_0"]
+                else:
+                    file = np.load('./data/obs_data_car_racing_' + str(description[0]) + '.npz')["arr_0"]
+                self.frames = np.array([item for obs in file for item in obs])
+                batch.extend(self.frames[ description[1] : description[2] ])
+                self.file_index = description[0]
+            
         
-        return batch, batch
+        ret = np.array(batch)
+        
+        # if len(batch) != self.batch_size:
+        #     print(ret.shape)
+        
+        return ret, ret
     
     def on_epoch_end(self):
-        """Updates indexes after each epoch"""
+        """Updates statistics after each epoch"""
         if self.shuffle:
             np.random.shuffle(self.statistics)
-            self.mapping = self.build_mapping()
-
-    def build_mapping(self, debug = False):
+            self.mapping = self.__build_mapping__()
     
+    def __build_mapping__(self, debug = False):
+        
         mapping = []
         descriptions = []
-
+        
         file_frame_counter = 0
         batch_frame_counter = 0
         total_frame_counter = 0
@@ -104,54 +116,56 @@ class DataGenerator(keras.utils.Sequence):
                 descriptions.append((self.statistics[stat_index][0], start_frame_index, file_frame_counter + 1))
                 mapping.append(descriptions)
                 descriptions = []
-    
+                
                 start_frame_index = file_frame_counter + 1
                 batch_frame_counter = 0
                 file_frame_counter += 1
-                total_frame_counter += 1
-                
+            
             elif file_end and not batch_end:
                 if debug: print("file_end and not batch_end")
-    
+                
                 descriptions.append((self.statistics[stat_index][0], start_frame_index, file_frame_counter + 1))
                 if stat_index == len(self.statistics) - 1:
                     mapping.append(descriptions)
-    
+                
                 stat_index += 1
                 start_frame_index = 0
                 file_frame_counter = 0
                 batch_frame_counter += 1
-                total_frame_counter += 1
-                
+            
             elif file_end and batch_end:
                 if debug: print("file_end and batch_end")
-    
+                
                 descriptions.append((self.statistics[stat_index][0], start_frame_index, file_frame_counter + 1))
                 mapping.append(descriptions)
                 descriptions = []
-    
+                
                 batch_frame_counter = 0
                 stat_index += 1
                 start_frame_index = 0
                 file_frame_counter = 0
-                total_frame_counter += 1
-                
+            
             elif not file_end and not batch_end:
                 if debug: print("not file_end and not batch_end")
-
+                
                 file_frame_counter += 1
                 batch_frame_counter += 1
-                total_frame_counter += 1
-                
-        if debug:
-            for d in mapping:
-                print(d)
+            
+            total_frame_counter += 1
         
-        return np.array(mapping)  # [[(fileindex, start_frame_index, end_frame_index), (fileindex2, start_frame_index2, end_frame_index2)])]
+        if debug:
+            for desc in mapping:
+                print(desc)
+        
+        return np.array(mapping)  # [[(fileindex, start_frame_index, end_frame_index), ])] interval: [start, end)
 
 
 if __name__ == '__main__':
-    d = DataGenerator(18, "debug", batch_size = 12)
-    print(len(d.mapping))
-    print(d.__len__())
-    
+    d = DataGenerator(10, "valid", batch_size = 64)
+    print(d.total_frame_count)
+    print(d.statistics)
+
+    # for i in range(d.__len__()):
+    #     s = d.__getitem__(i)[0].shape
+    #     if s != (64, 64, 64, 3):
+    #         print(d.mapping[i], i, s)

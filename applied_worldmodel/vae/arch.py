@@ -6,6 +6,8 @@ from keras import backend as K
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
 
+from Datagenerator import DataGenerator
+
 INPUT_DIM = (64,64,3)
 
 CONV_FILTERS = [32,64,128,256]
@@ -22,8 +24,8 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 
 Z_DIM = 32
 
-EPOCHS = 1
-BATCH_SIZE = 8
+EPOCHS = 10
+BATCH_SIZE = 4
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -108,7 +110,7 @@ class VAE():
         def vae_loss(y_true, y_pred):
             return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / 64
             
-        vae.compile(optimizer=Adam(), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        vae.compile(optimizer=Adam(lr = 0.00001), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
         
 
         return vae, vae_encoder, vae_decoder
@@ -119,19 +121,35 @@ class VAE():
 
     def train(self, max_batch, validation_split = 0.2):
 
-        # datagen
+        train_generator = DataGenerator(
+            max_batch = max_batch,
+            set_type = "train",
+            batch_size = BATCH_SIZE,
+            shuffle = True
+                                    
+        )
+
+        validation_generator = DataGenerator(
+            max_batch = 0,
+            set_type = "valid",
+            batch_size = BATCH_SIZE,
+            shuffle = True
+            
+        )
 
 
         # earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
         # callbacks_list = [earlystop]
 
-        self.model.fit(data, data,
-                shuffle=True,
-                epochs=EPOCHS,
-                batch_size=BATCH_SIZE,
-                validation_split=validation_split
-                # callbacks=callbacks_list
-                       )
+        self.model.fit_generator(
+            generator = train_generator,
+            validation_data = validation_generator,
+            use_multiprocessing = True,
+            shuffle=False,
+            epochs=EPOCHS,
+            max_queue_size = 10,
+            # callbacks=callbacks_list
+        )
         
         self.model.save_weights('./vae/weights.h5')
 
