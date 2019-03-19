@@ -8,6 +8,7 @@ from keras.optimizers import Adam
 import datetime
 import pickle
 
+from Datagenerator import DataGenerator
 
 INPUT_DIM = (64,64,3)
 
@@ -25,8 +26,8 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 
 Z_DIM = 32
 
-EPOCHS = 1
-BATCH_SIZE = 8
+EPOCHS = 10
+BATCH_SIZE = 4
 
 KL_DIVIDER = 2048
 
@@ -115,7 +116,7 @@ class VAE():
         def vae_loss(y_true, y_pred):
             return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / KL_DIVIDER
             
-        vae.compile(optimizer=Adam(lr=0.0001), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        vae.compile(optimizer=Adam(lr = 0.00001), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
         
 
         return vae, vae_encoder, vae_decoder
@@ -124,9 +125,23 @@ class VAE():
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
 
-    def train(self, data, validation_split = 0.3):
+    def train(self, max_batch):
 
-        # datagen
+        train_generator = DataGenerator(
+            max_batch = max_batch,
+            set_type = "train",
+            batch_size = BATCH_SIZE,
+            shuffle = True
+                                    
+        )
+
+        validation_generator = DataGenerator(
+            max_batch = 0,
+            set_type = "valid",
+            batch_size = BATCH_SIZE,
+            shuffle = True
+            
+        )
 
 
         # earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
@@ -137,20 +152,21 @@ class VAE():
                                   write_grads=False,
                                   write_images=False,
                                   histogram_freq = 0,
-
-                                  )
         
         callbacks_list = [tensorboard]
-
+        
         print(NAME)
-
-        history = self.model.fit(data, data,
-                        shuffle=True,
-                        epochs=EPOCHS,
-                        batch_size=BATCH_SIZE,
-                        validation_split=validation_split,
-                        callbacks=callbacks_list,
-                       )
+        
+        history = self.model.fit_generator(
+            generator = train_generator,
+            validation_data = validation_generator,
+            use_multiprocessing = True,
+            shuffle=False,
+            epochs=EPOCHS,
+            max_queue_size = 10,
+            callbacks=callbacks_list
+        )
+        
         # with open('./log/history_' + NAME, 'wb') as pickle_file:
         #     pickle.dump(history, pickle_file)
         self.model.save_weights('./vae/weights.h5')
