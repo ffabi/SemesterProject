@@ -3,7 +3,7 @@ import numpy as np
 from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Lambda, Reshape
 from keras.models import Model
 from keras import backend as K
-from keras.callbacks import EarlyStopping, TensorBoard
+from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, TerminateOnNaN
 from keras.optimizers import Adam
 import datetime
 import pickle
@@ -26,12 +26,14 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 
 Z_DIM = 32
 
-EPOCHS = 10
+EPOCHS = 8
 BATCH_SIZE = 4
 
-KL_DIVIDER = 2048
+LEARNING_RATE = 0.0001
 
-NAME = "VAE-original-date:{}-KL_DIVIDER:{}-BATCH_SIZE:{}".format(str(datetime.datetime.now())[:16], KL_DIVIDER, BATCH_SIZE)
+KL_DIVIDER = 1024
+
+NAME = "VAE-original-date:{}-KL_DIVIDER:{}-BATCH_SIZE:{}-LEARNING_RATE:{}".format(str(datetime.datetime.now())[:16], KL_DIVIDER, BATCH_SIZE, LEARNING_RATE)
 
 def sampling(args):
     z_mean, z_log_var = args
@@ -116,7 +118,7 @@ class VAE():
         def vae_loss(y_true, y_pred):
             return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / KL_DIVIDER
             
-        vae.compile(optimizer=Adam(lr = 0.00001), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+        vae.compile(optimizer=Adam(lr = LEARNING_RATE), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
         
 
         return vae, vae_encoder, vae_decoder
@@ -131,46 +133,62 @@ class VAE():
             max_batch = max_batch,
             set_type = "train",
             batch_size = BATCH_SIZE,
-            shuffle = True
-                                    
+            shuffle = True,
         )
 
         validation_generator = DataGenerator(
             max_batch = 0,
             set_type = "valid",
             batch_size = BATCH_SIZE,
-            shuffle = True
-            
+            shuffle = True,
         )
 
+        earlystop = EarlyStopping(
+            monitor = 'val_loss',
+            min_delta = 0.0001,
+            patience = 5,
+            verbose = 1,
+            mode = 'auto',
+        )
 
-        # earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
+        # we are going to keep only the best model
+        mcp = ModelCheckpoint(
+            filepath = './vae/weights_' + NAME + '.h5',
+            verbose = 1,
+            save_best_only = True,
+        )
+
         
-        tensorboard = TensorBoard(log_dir='./log/{}'.format(NAME),
-                                  batch_size = 1,
-                                  write_graph=True,
-                                  write_grads=False,
-                                  write_images=False,
-                                  histogram_freq = 0,
+        ton = TerminateOnNaN()
+
+        tensorboard = TensorBoard(
+            log_dir='./log/{}'.format(NAME),
+            batch_size = 1,
+            write_graph=True,
+            write_grads=False,
+            write_images=False,
+            histogram_freq = 0,
+        )
         
-        callbacks_list = [tensorboard]
+        callbacks_list = [tensorboard, earlystop, mcp, ton]
         
         print(NAME)
         
         history = self.model.fit_generator(
             generator = train_generator,
             validation_data = validation_generator,
-            use_multiprocessing = True,
+            use_multiprocessing = False,
             shuffle=False,
             epochs=EPOCHS,
-            max_queue_size = 10,
+            max_queue_size = 2,
             callbacks=callbacks_list
         )
         
         # with open('./log/history_' + NAME, 'wb') as pickle_file:
         #     pickle.dump(history, pickle_file)
-        self.model.save_weights('./vae/weights.h5')
-
+        
+        # self.model.save_weights('./vae/weights.h5')
+        
     def save_weights(self, filepath):
         self.model.save_weights(filepath)
 
