@@ -3,7 +3,7 @@ import numpy as np
 from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Lambda, Reshape
 from keras.models import Model
 from keras import backend as K
-from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, TerminateOnNaN
+from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, TerminateOnNaN, LambdaCallback
 from keras.optimizers import Adam
 import datetime
 import pickle
@@ -27,29 +27,59 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 Z_DIM = 32
 
 EPOCHS = 8
-BATCH_SIZE = 4
+BATCH_SIZE = 5
 
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.0002
 
-KL_DIVIDER = 1024
+KL_DIVIDER = 32768
 
-NAME = "VAE-original-date:{}-KL_DIVIDER:{}-BATCH_SIZE:{}-LEARNING_RATE:{}".format(str(datetime.datetime.now())[:16], KL_DIVIDER, BATCH_SIZE, LEARNING_RATE)
+BETA = 0.65
+
+NAME = "VAE-original-date:{}-KL_DIVIDER:{}-BATCH_SIZE:{}-LEARNING_RATE:{}-BETA:{}".format(str(datetime.datetime.now())[:16], KL_DIVIDER, BATCH_SIZE, LEARNING_RATE, BETA)
 
 def sampling(args):
     z_mean, z_log_var = args
     epsilon = K.random_normal(shape=(K.shape(z_mean)[0], Z_DIM), mean=0.,stddev=1.)
     return z_mean + K.exp(z_log_var / 2) * epsilon
 
-class VAE():
+class VAE:
     def __init__(self):
-        self.models = self._build()
-        self.model = self.models[0]
-        self.encoder = self.models[1]
-        self.decoder = self.models[2]
+        self.model_parameters = self._build()
+        self.model = self.model_parameters[0]
+        self.encoder = self.model_parameters[1]
+        self.decoder = self.model_parameters[2]
+        
+        self.vae_z_mean = self.model_parameters[3]
+        self.vae_z_log_var = self.model_parameters[4]
 
         self.input_dim = INPUT_DIM
         self.z_dim = Z_DIM
+
+        self.kl_divider = KL_DIVIDER
         
+
+    def loss_generator(self):
+    
+        def vae_r_loss(y_true, y_pred):
+        
+            y_true_flat = K.flatten(y_true)
+            y_pred_flat = K.flatten(y_pred)
+        
+            # return K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
+            return K.mean(K.abs(y_true_flat - y_pred_flat), axis = -1)
+    
+    
+        def vae_kl_loss(y_true, y_pred):
+            return - 0.5 * K.mean(1 + self.vae_z_log_var - K.square(self.vae_z_mean) - K.exp(self.vae_z_log_var), axis = -1)
+    
+    
+        def vae_loss(y_true, y_pred):
+            if self.kl_divider == 0:
+                return vae_r_loss(y_true, y_pred)
+            else:
+                return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / self.kl_divider
+            
+        return vae_r_loss, vae_kl_loss, vae_loss
 
 
     def _build(self):
@@ -100,34 +130,21 @@ class VAE():
         vae_encoder = Model(vae_x, vae_z)
         vae_decoder = Model(vae_z_input, vae_d4_decoder)
 
-        
-
-        def vae_r_loss(y_true, y_pred):
-
-            y_true_flat = K.flatten(y_true)
-            y_pred_flat = K.flatten(y_pred)
-
-            # return K.mean(K.square(y_true_flat - y_pred_flat), axis = -1)
-            return K.mean(K.abs(y_true_flat - y_pred_flat), axis = -1)
-        
-
-        def vae_kl_loss(y_true, y_pred):
-            return - 0.5 * K.mean(1 + vae_z_log_var - K.square(vae_z_mean) - K.exp(vae_z_log_var), axis = -1)
-
-
-        def vae_loss(y_true, y_pred):
-            return vae_r_loss(y_true, y_pred) + vae_kl_loss(y_true, y_pred) / KL_DIVIDER
-            
-        vae.compile(optimizer=Adam(lr = LEARNING_RATE), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
-        
-
-        return vae, vae_encoder, vae_decoder
+        return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var
 
 
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
+        
+    def on_epoch_end(self, epoch, logs):
+        self.kl_divider *= BETA
+        print(self.kl_divider)
 
     def train(self, max_batch):
+        
+        vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()
+        self.model.compile(optimizer=Adam(lr = LEARNING_RATE), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
+
 
         train_generator = DataGenerator(
             max_batch = max_batch,
@@ -163,24 +180,33 @@ class VAE():
 
         tensorboard = TensorBoard(
             log_dir='./log/{}'.format(NAME),
-            batch_size = 1,
-            write_graph=True,
+            write_graph=False,
             write_grads=False,
             write_images=False,
-            histogram_freq = 0,
         )
         
-        callbacks_list = [tensorboard, earlystop, mcp, ton]
+        lambda_callback = LambdaCallback(
+            on_epoch_begin=None,
+            on_epoch_end=self.on_epoch_end,
+            
+            on_batch_begin=None,
+            on_batch_end=None,
+            
+            on_train_begin=None,
+            on_train_end=None
+        )
+        
+        callbacks_list = [tensorboard, earlystop, mcp, ton, lambda_callback]
         
         print(NAME)
-        
+
         history = self.model.fit_generator(
             generator = train_generator,
             validation_data = validation_generator,
             use_multiprocessing = False,
             shuffle=False,
             epochs=EPOCHS,
-            max_queue_size = 2,
+            max_queue_size = 128,
             callbacks=callbacks_list
         )
         

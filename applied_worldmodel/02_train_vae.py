@@ -8,15 +8,16 @@ import config
 def main(args):
 
     max_batch = args.max_batch
-    new_model = args.new_model
+    load_model = args.load_model
 
     vae = VAE()
 
-    if not new_model:
+    if not load_model=="None":
         try:
-            vae.set_weights('./vae/weights.h5')
+            print("Loading model " + load_model)
+            vae.set_weights(load_model)
         except:
-            print("Either set --new_model or ensure ./vae/weights.h5 exists")
+            print("Either don't set --load_model or ensure " + load_model + " exists")
             raise
 
     
@@ -26,7 +27,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description= 'Train VAE')
     parser.add_argument('--max_batch', type=int, default = 10, help='The max batch number') # --max_batch $(ls data | grep obs | wc -l)
-    parser.add_argument('--new_model', action='store_true', help='start a new model from scratch?')
+    parser.add_argument('--load_model', type=str, default = "None", help='load an existing model')
     args = parser.parse_args()
 
     main(args)
