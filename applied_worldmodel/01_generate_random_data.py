@@ -18,6 +18,10 @@ def main(args):
     render = args.render
     batch_size = args.batch_size
     run_all_envs = args.run_all_envs
+    validation = args.validation
+    
+    if validation:
+        total_episodes = batch_size
     
     if run_all_envs:
         envs_to_generate = config.train_envs
@@ -75,9 +79,16 @@ def main(args):
                 s = s + 1
             
             print("Saving dataset for batch {}".format(batch))
-            np.savez_compressed('./data/obs_data_' + current_env_name + '_' + str(batch), obs_data)
-            np.savez_compressed('./data/action_data_' + current_env_name + '_' + str(batch), action_data)
             
+            if validation:
+                np.savez_compressed('./data/obs_valid', obs_data)
+                np.savez_compressed('./data/action_valid', action_data)
+            else:
+                np.random.shuffle(obs_data)
+                
+                np.savez_compressed('./data/obs_data_' + current_env_name + '_' + str(batch), obs_data)
+                np.savez_compressed('./data/action_data_' + current_env_name + '_' + str(batch), action_data)
+                
             batch = batch + 1
         
         env.close()
@@ -93,6 +104,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type = int, default = 64, help = 'how many episodes in a batch (one file)')
     parser.add_argument('--run_all_envs', action = 'store_true',
                         help = 'if true, will ignore env_name and loop over all envs in train_envs variables in config.py')
+    parser.add_argument('--validation', action = 'store_true',
+                        help = 'save to obs_valid.npz')
     
     args = parser.parse_args()
     main(args)
