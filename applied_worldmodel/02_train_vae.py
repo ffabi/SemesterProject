@@ -7,7 +7,7 @@ import config
 
 def main(args):
 
-    max_batch = args.max_batch
+    num_files = args.num_files
     load_model = args.load_model
 
     vae = VAE()
@@ -21,12 +21,12 @@ def main(args):
             raise
 
     
-    vae.train(max_batch)
+    vae.train(num_files)
     
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description= 'Train VAE')
-    parser.add_argument('--max_batch', type=int, default = 10, help='The max batch number') # --max_batch $(ls data | grep obs | wc -l)
+    parser.add_argument('--num_files', type=int, default = 10, help='The number of files') # --num_files $(ls data | grep obs | wc -l)
     parser.add_argument('--load_model', type=str, default = "None", help='load an existing model')
     args = parser.parse_args()
 

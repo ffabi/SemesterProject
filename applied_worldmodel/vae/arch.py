@@ -148,14 +148,14 @@ class VAE:
         vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()
         self.model.compile(optimizer=Adam(lr = LEARNING_RATE), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
-    def train(self, max_batch):
+    def train(self, num_files):
         
         vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()
         self.model.compile(optimizer=Adam(lr = LEARNING_RATE), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
 
         train_generator = DataGenerator(
-            num_files = max_batch,
+            num_files = num_files,
             set_type = "train",
             batch_size = BATCH_SIZE,
             shuffle = True,
