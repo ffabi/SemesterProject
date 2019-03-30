@@ -26,14 +26,14 @@ CONV_T_ACTIVATIONS = ['relu','relu','relu','sigmoid']
 
 Z_DIM = 32
 
-EPOCHS = 8
-BATCH_SIZE = 5
+EPOCHS = 20
+BATCH_SIZE = 19
 
-LEARNING_RATE = 0.0002
+LEARNING_RATE = 0.0004
 
-KL_DIVIDER = 32768
+KL_DIVIDER = 0
 
-BETA = 0.65
+BETA = 0.69
 
 NAME = "VAE-original-date:{}-KL_DIVIDER:{}-BATCH_SIZE:{}-LEARNING_RATE:{}-BETA:{}".format(str(datetime.datetime.now())[:16], KL_DIVIDER, BATCH_SIZE, LEARNING_RATE, BETA)
 
@@ -137,8 +137,16 @@ class VAE:
         self.model.load_weights(filepath)
         
     def on_epoch_end(self, epoch, logs):
-        self.kl_divider *= BETA
+        if self.kl_divider == 0:
+            self.kl_divider = 32768
+        else:
+            self.kl_divider *= BETA
+            if epoch >= 10:
+                self.kl_divider = 1024
         print(self.kl_divider)
+
+        vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()
+        self.model.compile(optimizer=Adam(lr = LEARNING_RATE), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
     def train(self, max_batch):
         
@@ -147,14 +155,14 @@ class VAE:
 
 
         train_generator = DataGenerator(
-            max_batch = max_batch,
+            num_files = max_batch,
             set_type = "train",
             batch_size = BATCH_SIZE,
             shuffle = True,
         )
 
         validation_generator = DataGenerator(
-            max_batch = 0,
+            num_files = 0,
             set_type = "valid",
             batch_size = BATCH_SIZE,
             shuffle = True,
@@ -200,7 +208,7 @@ class VAE:
         
         print(NAME)
 
-        history = self.model.fit_generator(
+        self.model.fit_generator(
             generator = train_generator,
             validation_data = validation_generator,
             use_multiprocessing = False,

@@ -11,13 +11,13 @@ def train_set_counter(file_id):
 class DataGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
     
-    def __init__(self, max_batch, set_type = "debug", batch_size = 64, shuffle = True):
+    def __init__(self, num_files, set_type = "debug", batch_size = 64, shuffle = True):
         """Initialization"""
     
         self.batch_size = batch_size
         self.shuffle = shuffle
     
-        self.num_files = max_batch
+        self.num_files = num_files
         self.set_type = set_type
         if set_type=="debug": print("Building statistics")
         self.statistics = self.__build_statistics(set_type).T
@@ -66,7 +66,7 @@ class DataGenerator(keras.utils.Sequence):
         
         if set_type == "debug":
             return np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-                             [12389, 12507, 12604, 12237, 12562, 12500, 12158, 12765, 12418, 12230, ]])
+                             [12389, 12507, 12604, 12237, 12562, 12500, 12158, 12765, 12418, 12230]])
         
         elif set_type== "train":
             #count the train set using multiple threads so it's faster and the memory will be freed
@@ -165,11 +165,8 @@ class DataGenerator(keras.utils.Sequence):
 
 
 if __name__ == '__main__':
-    d = DataGenerator(10, "debug", batch_size = 64)
+
+    d = DataGenerator(10, "train", batch_size = 64)
     print(d.total_frame_count)
     print(d.statistics)
-
-    # for i in range(d.__len__()):
-    #     s = d.__getitem__(i)[0].shape
-    #     if s != (64, 64, 64, 3):
-    #         print(d.mapping[i], i, s)
+    
