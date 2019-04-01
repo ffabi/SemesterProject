@@ -16,12 +16,12 @@ def main(args):
     start_batch = args.start_batch
     time_steps = args.time_steps
     render = args.render
-    batch_size = args.batch_size
+    file_size = args.file_size
     run_all_envs = args.run_all_envs
     validation = args.validation
     
     if validation:
-        total_episodes = batch_size
+        total_episodes = file_size
     
     if run_all_envs:
         envs_to_generate = config.train_envs
@@ -35,7 +35,7 @@ def main(args):
         s = 0
         batch = start_batch
         
-        batch_size = min(batch_size, total_episodes)
+        batch_size = min(file_size, total_episodes)
         
         while s < total_episodes:
             obs_data = []
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     parser.add_argument('--start_batch', type = int, default = 0, help = 'start_batch number')
     parser.add_argument('--time_steps', type = int, default = 230, help = 'how many timesteps at start of episode?')
     parser.add_argument('--render', action = 'store_true', help = 'render the env as data is generated')
-    parser.add_argument('--batch_size', type = int, default = 64, help = 'how many episodes in a batch (one file)')
+    parser.add_argument('--file_size', type = int, default = 64, help = 'how many episodes in a batch (one file)')
     parser.add_argument('--run_all_envs', action = 'store_true',
                         help = 'if true, will ignore env_name and loop over all envs in train_envs variables in config.py')
     parser.add_argument('--validation', action = 'store_true',

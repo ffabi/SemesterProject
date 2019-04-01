@@ -1,7 +1,7 @@
 import numpy as np
 
-from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Lambda, Reshape
-from keras.models import Model
+from keras.layers import Input, Conv2D, Flatten, Dense, Conv2DTranspose, Lambda, Reshape, BatchNormalization
+from keras.models import Model, Sequential
 from keras import backend as K
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, TerminateOnNaN, LambdaCallback
 from keras.optimizers import Adam
@@ -82,7 +82,7 @@ class VAE:
         return vae_r_loss, vae_kl_loss, vae_loss
 
 
-    def _build(self):
+    def _build_old(self):
         vae_x = Input(shape=INPUT_DIM)
         vae_c1 = Conv2D(filters = CONV_FILTERS[0], kernel_size = CONV_KERNEL_SIZES[0], strides = CONV_STRIDES[0], activation=CONV_ACTIVATIONS[0])(vae_x)
         vae_c2 = Conv2D(filters = CONV_FILTERS[1], kernel_size = CONV_KERNEL_SIZES[1], strides = CONV_STRIDES[1], activation=CONV_ACTIVATIONS[0])(vae_c1)
@@ -128,6 +128,72 @@ class VAE:
 
         vae = Model(vae_x, vae_d4_model)
         vae_encoder = Model(vae_x, vae_z)
+        vae_decoder = Model(vae_z_input, vae_d4_decoder)
+
+        return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var
+    
+    
+    def _build(self):
+        vae_input = Input(shape=INPUT_DIM)
+        vae_c1 = Conv2D(filters = CONV_FILTERS[0], kernel_size = CONV_KERNEL_SIZES[0], strides = CONV_STRIDES[0], activation=CONV_ACTIVATIONS[0])(vae_input)
+        vae_c1_norm = BatchNormalization()(vae_c1)
+        vae_c2 = Conv2D(filters = CONV_FILTERS[1], kernel_size = CONV_KERNEL_SIZES[1], strides = CONV_STRIDES[1], activation=CONV_ACTIVATIONS[0])(vae_c1_norm)
+        vae_c2_norm = BatchNormalization()(vae_c2)
+        vae_c3 = Conv2D(filters = CONV_FILTERS[2], kernel_size = CONV_KERNEL_SIZES[2], strides = CONV_STRIDES[2], activation=CONV_ACTIVATIONS[0])(vae_c2_norm)
+        vae_c3_norm = BatchNormalization()(vae_c3)
+        vae_c4 = Conv2D(filters = CONV_FILTERS[3], kernel_size = CONV_KERNEL_SIZES[3], strides = CONV_STRIDES[3], activation=CONV_ACTIVATIONS[0])(vae_c3_norm)
+        vae_c4_norm = BatchNormalization()(vae_c4)
+
+        vae_z_in = Flatten()(vae_c4_norm)
+        vae_z_in_norm = BatchNormalization()(vae_z_in)
+
+ 
+        vae_z_mean = Dense(Z_DIM)(vae_z_in_norm)
+        vae_z_mean_norm = BatchNormalization()(vae_z_mean)
+        vae_z_log_var = Dense(Z_DIM)(vae_z_in_norm)
+        vae_z_log_var_norm = BatchNormalization()(vae_z_log_var)
+
+        vae_z = Lambda(sampling)([vae_z_mean_norm, vae_z_log_var_norm])
+        vae_z_norm = BatchNormalization()(vae_z)
+
+        vae_z_input = Input(shape=(Z_DIM,))
+
+        # we instantiate these layers separately so as to reuse them later
+        vae_dense = Dense(1024)
+        vae_dense_model = vae_dense(vae_z_norm)
+        vae_dense_model_norm = BatchNormalization()(vae_dense_model)
+
+        vae_z_out = Reshape((1,1,DENSE_SIZE))
+        vae_z_out_model = vae_z_out(vae_dense_model_norm)
+        vae_z_out_model_norm = BatchNormalization()(vae_z_out_model)
+
+        vae_d1 = Conv2DTranspose(filters = CONV_T_FILTERS[0], kernel_size = CONV_T_KERNEL_SIZES[0] , strides = CONV_T_STRIDES[0], activation=CONV_T_ACTIVATIONS[0])
+        vae_d1_model = vae_d1(vae_z_out_model_norm)
+        vae_d1_model_norm = BatchNormalization()(vae_d1_model)
+        vae_d2 = Conv2DTranspose(filters = CONV_T_FILTERS[1], kernel_size = CONV_T_KERNEL_SIZES[1] , strides = CONV_T_STRIDES[1], activation=CONV_T_ACTIVATIONS[1])
+        vae_d2_model = vae_d2(vae_d1_model_norm)
+        vae_d2_model_norm = BatchNormalization()(vae_d2_model)
+        vae_d3 = Conv2DTranspose(filters = CONV_T_FILTERS[2], kernel_size = CONV_T_KERNEL_SIZES[2] , strides = CONV_T_STRIDES[2], activation=CONV_T_ACTIVATIONS[2])
+        vae_d3_model = vae_d3(vae_d2_model_norm)
+        vae_d3_model_norm = BatchNormalization()(vae_d3_model)
+        vae_d4 = Conv2DTranspose(filters = CONV_T_FILTERS[3], kernel_size = CONV_T_KERNEL_SIZES[3] , strides = CONV_T_STRIDES[3], activation=CONV_T_ACTIVATIONS[3])
+        vae_d4_model = vae_d4(vae_d3_model_norm)
+        vae_d4_model_norm = BatchNormalization()(vae_d4_model)
+
+        #### DECODER ONLY
+
+        vae_dense_decoder = vae_dense(vae_z_input)
+        vae_z_out_decoder = vae_z_out(vae_dense_decoder)
+
+        vae_d1_decoder = vae_d1(vae_z_out_decoder)
+        vae_d2_decoder = vae_d2(vae_d1_decoder)
+        vae_d3_decoder = vae_d3(vae_d2_decoder)
+        vae_d4_decoder = vae_d4(vae_d3_decoder)
+
+        #### MODELS
+
+        vae = Model(vae_input, vae_d4_model_norm)
+        vae_encoder = Model(vae_input, vae_z)
         vae_decoder = Model(vae_z_input, vae_d4_decoder)
 
         return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var

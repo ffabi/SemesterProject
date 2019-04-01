@@ -36,15 +36,15 @@ or:
 # Running AppliedDataSciencePartners - WorldModels
 `mkdir data`
 
-`xvfb-run python3 01_generate_random_data.py car_racing --total_episodes 200 --start_batch 0 --time_steps 300`
+`xvfb-run -a python3 01_generate_random_data.py --total_episodes 640 --file_size 64 --start_batch 0`
 
-`xvfb-run python3 02_train_vae.py --start_batch 0 --max_batch 9 --new_model`
+`xvfb-run -a python3 02_train_vae.py --start_batch 0 --max_batch 9 --new_model`
 
-`xvfb-run python3 03_generate_rnn_data.py --start_batch 0 --max_batch 9`
+`xvfb-run -a python3 03_generate_rnn_data.py --start_batch 0 --max_batch 9`
 
-`xvfb-run python3 04_train_rnn.py --start_batch 0 --max_batch 0 --new_model`
+`xvfb-run -a python3 04_train_rnn.py --start_batch 0 --max_batch 0 --new_model`
 
-`xvfb-run python3 05_train_controller.py car_racing --num_worker 1 --num_worker_trial 2 --num_episode 4 --max_length 1000 --eval_steps 25`
+`xvfb-run -a python3 05_train_controller.py car_racing --num_worker 1 --num_worker_trial 2 --num_episode 4 --max_length 1000 --eval_steps 25`
 
 Source:
 <https://medium.com/applied-data-science/how-to-build-your-own-world-model-using-python-and-keras-64fb388ba459>
