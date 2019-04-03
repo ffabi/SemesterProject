@@ -14,3 +14,5 @@ applied_worldmodel/log/
 *.h5
 
 *.avi
+
+\.idea/
