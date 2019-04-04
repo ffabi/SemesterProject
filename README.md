@@ -38,7 +38,7 @@ or:
 
 `xvfb-run -a python3 01_generate_random_data.py --total_episodes 640 --file_size 64 --start_batch 0`
 
-`xvfb-run -a python3 02_train_vae.py --start_batch 0 --max_batch 9 --new_model`
+`xvfb-run -a python3 02_train_vae.py --num_files 10`
 
 `xvfb-run -a python3 03_generate_rnn_data.py --start_batch 0 --max_batch 9`
 

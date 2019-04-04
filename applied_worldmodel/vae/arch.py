@@ -27,20 +27,27 @@ class VAE:
 
         self.z_dim = 32
 
-        self.epochs = 20
-        self.batch_size = 19
+        self.epochs = 40
+        self.batch_size = 23
 
-        self.learning_rate = 0.0004
+        self.learning_rate = 0.00008
 
         self.kl_divider = 0
 
-        self.beta = 0.69
+        self.beta = 0.68
 
-        self.name = "VAE-original-date:{}-self.kl_divider:{}-self.batch_size:{}-self.learning_rate:{}-self.beta:{}".format(
-            str(datetime.datetime.now())[:16], self.kl_divider, self.batch_size, self.learning_rate, self.beta)
+        self.norm = "conv"
+
+        self.name = "VAE-original-date:{}-kl_divider:{}-batch_size:{}-learning_rate:{}-beta:{}-norm:{}".format(
+            str(datetime.datetime.now())[:16], self.kl_divider, self.batch_size, self.learning_rate, self.beta, self.norm)
 
 
-        self.model_parameters = self._build()
+        if self.norm=="full":
+            self.model_parameters = self._build_norm()
+        elif self.norm == "conv":
+            self.model_parameters = self._build_conv_norm()
+        elif self.norm == "none":
+            self.model_parameters = self._build_old()
         self.model = self.model_parameters[0]
         self.encoder = self.model_parameters[1]
         self.decoder = self.model_parameters[2]
@@ -78,8 +85,8 @@ class VAE:
         return z_mean + K.exp(z_log_var / 2) * epsilon
 
     def _build_old(self):
-        vae_x = Input(shape=self.input_dim)
-        vae_c1 = Conv2D(filters = self.conv_filters[0], kernel_size = self.conv_kernel_sizes[0], strides = self.conv_strides[0], activation=self.conv_activations[0])(vae_x)
+        vae_input = Input(shape=self.input_dim)
+        vae_c1 = Conv2D(filters = self.conv_filters[0], kernel_size = self.conv_kernel_sizes[0], strides = self.conv_strides[0], activation=self.conv_activations[0])(vae_input)
         vae_c2 = Conv2D(filters = self.conv_filters[1], kernel_size = self.conv_kernel_sizes[1], strides = self.conv_strides[1], activation=self.conv_activations[0])(vae_c1)
         vae_c3= Conv2D(filters = self.conv_filters[2], kernel_size = self.conv_kernel_sizes[2], strides = self.conv_strides[2], activation=self.conv_activations[0])(vae_c2)
         vae_c4= Conv2D(filters = self.conv_filters[3], kernel_size = self.conv_kernel_sizes[3], strides = self.conv_strides[3], activation=self.conv_activations[0])(vae_c3)
@@ -121,14 +128,14 @@ class VAE:
 
         #### MODELS
 
-        vae = Model(vae_x, vae_d4_model)
-        vae_encoder = Model(vae_x, vae_z)
+        vae = Model(vae_input, vae_d4_model)
+        vae_encoder = Model(vae_input, vae_z)
         vae_decoder = Model(vae_z_input, vae_d4_decoder)
 
         return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var
     
     
-    def _build(self):
+    def _build_norm(self):
         vae_input = Input(shape=self.input_dim)
         vae_c1 = Conv2D(filters = self.conv_filters[0], kernel_size = self.conv_kernel_sizes[0], strides = self.conv_strides[0], activation=self.conv_activations[0])(vae_input)
         vae_c1_norm = BatchNormalization()(vae_c1)
@@ -193,6 +200,71 @@ class VAE:
 
         return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var
 
+    def _build_conv_norm(self):
+        vae_input = Input(shape=self.input_dim)
+        vae_c1 = Conv2D(filters=self.conv_filters[0], kernel_size=self.conv_kernel_sizes[0],
+                        strides=self.conv_strides[0], activation=self.conv_activations[0])(vae_input)
+        vae_c1_norm = BatchNormalization(scale=False)(vae_c1)
+        vae_c2 = Conv2D(filters=self.conv_filters[1], kernel_size=self.conv_kernel_sizes[1],
+                        strides=self.conv_strides[1], activation=self.conv_activations[0])(vae_c1_norm)
+        vae_c2_norm = BatchNormalization(scale=False)(vae_c2)
+        vae_c3 = Conv2D(filters=self.conv_filters[2], kernel_size=self.conv_kernel_sizes[2],
+                        strides=self.conv_strides[2], activation=self.conv_activations[0])(vae_c2_norm)
+        vae_c3_norm = BatchNormalization(scale=False)(vae_c3)
+        vae_c4 = Conv2D(filters=self.conv_filters[3], kernel_size=self.conv_kernel_sizes[3],
+                        strides=self.conv_strides[3], activation=self.conv_activations[0])(vae_c3_norm)
+        vae_c4_norm = BatchNormalization(scale=False)(vae_c4)
+
+        vae_z_in = Flatten()(vae_c4_norm)
+
+        vae_z_mean = Dense(self.z_dim)(vae_z_in)
+        vae_z_log_var = Dense(self.z_dim)(vae_z_in)
+
+        vae_z = Lambda(self.sampling)([vae_z_mean, vae_z_log_var])
+
+        vae_z_input = Input(shape=(self.z_dim,))
+
+        # we instantiate these layers separately so as to reuse them later
+        vae_dense = Dense(1024)
+        vae_dense_model = vae_dense(vae_z)
+
+        vae_z_out = Reshape((1,1,self.dense_size))
+        vae_z_out_model = vae_z_out(vae_dense_model)
+
+        vae_d1 = Conv2DTranspose(filters=self.conv_t_filters[0], kernel_size=self.conv_t_kernel_sizes[0],
+                                 strides=self.conv_t_strides[0], activation=self.conv_t_activations[0])
+        vae_d1_model = vae_d1(vae_z_out_model)
+        vae_d1_model_norm = BatchNormalization(scale=False)(vae_d1_model)
+        vae_d2 = Conv2DTranspose(filters=self.conv_t_filters[1], kernel_size=self.conv_t_kernel_sizes[1],
+                                 strides=self.conv_t_strides[1], activation=self.conv_t_activations[1])
+        vae_d2_model = vae_d2(vae_d1_model_norm)
+        vae_d2_model_norm = BatchNormalization(scale=False)(vae_d2_model)
+        vae_d3 = Conv2DTranspose(filters=self.conv_t_filters[2], kernel_size=self.conv_t_kernel_sizes[2],
+                                 strides=self.conv_t_strides[2], activation=self.conv_t_activations[2])
+        vae_d3_model = vae_d3(vae_d2_model_norm)
+        vae_d3_model_norm = BatchNormalization(scale=False)(vae_d3_model)
+        vae_d4 = Conv2DTranspose(filters=self.conv_t_filters[3], kernel_size=self.conv_t_kernel_sizes[3],
+                                 strides=self.conv_t_strides[3], activation=self.conv_t_activations[3])
+        vae_d4_model = vae_d4(vae_d3_model_norm)
+        vae_d4_model_norm = BatchNormalization(scale=False)(vae_d4_model)
+
+        #### DECODER ONLY
+
+        vae_dense_decoder = vae_dense(vae_z_input)
+        vae_z_out_decoder = vae_z_out(vae_dense_decoder)
+
+        vae_d1_decoder = vae_d1(vae_z_out_decoder)
+        vae_d2_decoder = vae_d2(vae_d1_decoder)
+        vae_d3_decoder = vae_d3(vae_d2_decoder)
+        vae_d4_decoder = vae_d4(vae_d3_decoder)
+
+        #### MODELS
+
+        vae = Model(vae_input, vae_d4_model_norm)
+        vae_encoder = Model(vae_input, vae_z)
+        vae_decoder = Model(vae_z_input, vae_d4_decoder)
+
+        return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var
 
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
@@ -275,7 +347,7 @@ class VAE:
             use_multiprocessing = False,
             shuffle=False,
             epochs=self.epochs,
-            max_queue_size = 128,
+            max_queue_size = 256,
             callbacks=callbacks_list
         )
         
