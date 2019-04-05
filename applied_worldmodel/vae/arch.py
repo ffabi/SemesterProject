@@ -27,20 +27,19 @@ class VAE:
 
         self.z_dim = 32
 
-        self.epochs = 40
+        self.epochs = 42
         self.batch_size = 23
 
-        self.learning_rate = 0.00008
+        self.learning_rate = 0.0001
 
         self.kl_divider = 0
 
-        self.beta = 0.68
+        self.beta = 0.7
 
-        self.norm = "conv"
+        self.norm = "none"
 
         self.name = "VAE-original-date:{}-kl_divider:{}-batch_size:{}-learning_rate:{}-beta:{}-norm:{}".format(
             str(datetime.datetime.now())[:16], self.kl_divider, self.batch_size, self.learning_rate, self.beta, self.norm)
-
 
         if self.norm=="full":
             self.model_parameters = self._build_norm()
@@ -48,6 +47,7 @@ class VAE:
             self.model_parameters = self._build_conv_norm()
         elif self.norm == "none":
             self.model_parameters = self._build_old()
+
         self.model = self.model_parameters[0]
         self.encoder = self.model_parameters[1]
         self.decoder = self.model_parameters[2]
@@ -133,8 +133,7 @@ class VAE:
         vae_decoder = Model(vae_z_input, vae_d4_decoder)
 
         return vae, vae_encoder, vae_decoder, vae_z_mean, vae_z_log_var
-    
-    
+
     def _build_norm(self):
         vae_input = Input(shape=self.input_dim)
         vae_c1 = Conv2D(filters = self.conv_filters[0], kernel_size = self.conv_kernel_sizes[0], strides = self.conv_strides[0], activation=self.conv_activations[0])(vae_input)
@@ -180,7 +179,7 @@ class VAE:
         vae_d3_model_norm = BatchNormalization()(vae_d3_model)
         vae_d4 = Conv2DTranspose(filters = self.conv_t_filters[3], kernel_size = self.conv_t_kernel_sizes[3] , strides = self.conv_t_strides[3], activation=self.conv_t_activations[3])
         vae_d4_model = vae_d4(vae_d3_model_norm)
-        vae_d4_model_norm = BatchNormalization()(vae_d4_model)
+        #vae_d4_model_norm = BatchNormalization()(vae_d4_model)
 
         #### DECODER ONLY
 
@@ -194,7 +193,7 @@ class VAE:
 
         #### MODELS
 
-        vae = Model(vae_input, vae_d4_model_norm)
+        vae = Model(vae_input, vae_d4_model)
         vae_encoder = Model(vae_input, vae_z)
         vae_decoder = Model(vae_z_input, vae_d4_decoder)
 
@@ -246,7 +245,7 @@ class VAE:
         vae_d4 = Conv2DTranspose(filters=self.conv_t_filters[3], kernel_size=self.conv_t_kernel_sizes[3],
                                  strides=self.conv_t_strides[3], activation=self.conv_t_activations[3])
         vae_d4_model = vae_d4(vae_d3_model_norm)
-        vae_d4_model_norm = BatchNormalization(scale=False)(vae_d4_model)
+        # vae_d4_model_norm = BatchNormalization(scale=False)(vae_d4_model)
 
         #### DECODER ONLY
 
@@ -260,7 +259,7 @@ class VAE:
 
         #### MODELS
 
-        vae = Model(vae_input, vae_d4_model_norm)
+        vae = Model(vae_input, vae_d4_model)
         vae_encoder = Model(vae_input, vae_z)
         vae_decoder = Model(vae_z_input, vae_d4_decoder)
 
@@ -268,10 +267,10 @@ class VAE:
 
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
-        
+
     def on_epoch_end(self, epoch, logs):
         if self.kl_divider == 0:
-            self.kl_divider = 32768
+            self.kl_divider = 32768*2
         else:
             self.kl_divider *= self.beta
             if epoch >= 10:
@@ -285,7 +284,6 @@ class VAE:
         
         vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()
         self.model.compile(optimizer=Adam(lr = self.learning_rate), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
-
 
         train_generator = DataGenerator(
             num_files = num_files,
@@ -301,10 +299,11 @@ class VAE:
             shuffle = True,
         )
 
+
         earlystop = EarlyStopping(
             monitor = 'val_loss',
             min_delta = 0.0001,
-            patience = 5,
+            patience = 5000,
             verbose = 1,
             mode = 'auto',
         )
