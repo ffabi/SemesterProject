@@ -273,8 +273,9 @@ class VAE:
             self.kl_divider = 32768*2
         else:
             self.kl_divider *= self.beta
-            if epoch >= 10:
-                self.kl_divider = 1024
+            if epoch >= 26:
+                self.kl_divider = 128
+                
         print(self.kl_divider)
 
         vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()

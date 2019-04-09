@@ -47,7 +47,7 @@ class DataGenerator(keras.utils.Sequence):
             else:
                 self.current_frames = None
                 if self.set_type == "valid":
-                    file = np.load('./data/obs_valid.npz')["arr_0"]
+                    file = np.load('./data/obs_valid_car_racing.npz')["arr_0"]
                 else:
                     file = np.load('./data/obs_data_car_racing_' + str(description[0]) + '.npz')["arr_0"]
                 self.current_frames = np.array([item for obs in file for item in obs])
