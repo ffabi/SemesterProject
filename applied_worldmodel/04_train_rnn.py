@@ -5,41 +5,26 @@ import argparse
 import numpy as np
 
 def main(args):
-    
-    start_batch = args.start_batch
-    max_batch = args.max_batch
-    new_model = args.new_model
+    num_files = args.num_files
+    load_model = args.load_model
 
     rnn = RNN()
 
-    if not new_model:
+    if not load_model=="None":
         try:
-          rnn.set_weights('./rnn/weights.h5')
+            print("Loading model " + load_model)
+            rnn.set_weights(load_model)
         except:
-          print("Either set --new_model or ensure ./rnn/weights.h5 exists")
-          raise
+            print("Either don't set --load_model or ensure " + load_model + " exists")
+            raise
 
-    for batch_num in range(start_batch, max_batch + 1):
-        print('Building batch {}...'.format(batch_num))
-        new_rnn_input = np.load('./data/rnn_input_' + str(batch_num) + '.npy') 
-        new_rnn_output = np.load( './data/rnn_output_' + str(batch_num) + '.npy')
-
-        if batch_num>start_batch:
-          rnn_input = np.concatenate([rnn_input, new_rnn_input])
-          rnn_output = np.concatenate([rnn_output, new_rnn_output])
-        else:
-          rnn_input = new_rnn_input
-          rnn_output = new_rnn_output
-
-    rnn.train(rnn_input, rnn_output)
+    rnn.train(num_files)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=('Train RNN'))
-    parser.add_argument('--start_batch', type=int, default = 0, help='The start batch number')
-    parser.add_argument('--max_batch', type=int, default = 0, help='The max batch number')
-    parser.add_argument('--new_model', action='store_true', help='start a new model from scratch?')
-
+    parser = argparse.ArgumentParser(description='Train RNN')
+    parser.add_argument('--num_files', type=int, default = 10, help='The number of files')
+    parser.add_argument('--load_model', type=str, default = "None", help='load an existing model')
     args = parser.parse_args()
 
     main(args)

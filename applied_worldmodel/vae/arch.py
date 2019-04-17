@@ -6,7 +6,7 @@ from keras import backend as K
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, TerminateOnNaN, LambdaCallback
 from keras.optimizers import Adam
 import datetime
-from Datagenerator import DataGenerator
+from DataGenerator import DataGenerator
 
 class VAE:
     def __init__(self):
@@ -340,6 +340,9 @@ class VAE:
         callbacks_list = [tensorboard, earlystop, mcp, ton, lambda_callback]
         
         print(self.name)
+        
+        self.model.summary()
+
 
         self.model.fit_generator(
             generator = train_generator,

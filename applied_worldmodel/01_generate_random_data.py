@@ -3,7 +3,7 @@
 import numpy as np
 import random
 import config
-from sklearn.utils import shuffle
+# from sklearn.utils import shuffle
 # import matplotlib.pyplot as plt
 
 from env import make_env
@@ -88,7 +88,7 @@ def main(args):
             else:
                 # np.random.shuffle(obs_data)
 
-                obs_data, action_data = shuffle(obs_data, action_data)
+                # obs_data, action_data = shuffle(obs_data, action_data)
 
                 np.savez_compressed("./data/obs_data_" + current_env_name + "_" + str(batch), obs_data)
                 np.savez_compressed("./data/action_data_" + current_env_name + "_" + str(batch), action_data)

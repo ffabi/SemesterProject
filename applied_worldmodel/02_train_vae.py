@@ -26,7 +26,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description= 'Train VAE')
-    parser.add_argument('--num_files', type=int, default = 10, help='The number of files') # --num_files $(ls data | grep obs | wc -l)
+    parser.add_argument('--num_files', type=int, default = 10, help='The number of files')
     parser.add_argument('--load_model', type=str, default = "None", help='load an existing model')
     args = parser.parse_args()
 

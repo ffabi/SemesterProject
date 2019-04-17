@@ -1,11 +1,13 @@
-import math
+import math, datetime
 import numpy as np
 
 from keras.layers import Input, LSTM, Dense
 from keras.models import Model
 from keras import backend as K
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ModelCheckpoint, TerminateOnNaN, TensorBoard, LambdaCallback
 from keras.optimizers import Adam
+
+from RNNDataGenerator import RNNDataGenerator
 
 Z_DIM = 32
 ACTION_DIM = 3
@@ -50,73 +52,144 @@ def tf_normal(y_true, mu, sigma, pi):
     return result
 
 
-class RNN():
+class RNN:
     def __init__(self):
-        self.models = self._build()
-        self.model = self.models[0]
-        self.forward = self.models[1]
         self.z_dim = 32
         self.action_dim = ACTION_DIM
         self.hidden_units = 256
         self.gaussian_mixtures = GAUSSIAN_MIXTURES
-
+        self.input_dim = (self.z_dim + self.action_dim)
+        self.learning_rate = 0.0001
+        self.batch_size = 16
+        self.epochs = 100
+        self.name = "RNN-original-date:{}-action_dim:{}-hidden_units:{}-gaussian_mixtures:{}-learning_rate:{}-batch_size:{}".format(
+            str(datetime.datetime.now())[:16], self.action_dim, self.hidden_units, self.gaussian_mixtures,
+            self.learning_rate, self.batch_size)
+        
+        self.models = self._build()
+        self.model = self.models[0]
+        self.forward = self.models[1]
+    
     def _build(self):
         #### THE MODEL THAT WILL BE TRAINED
-        rnn_x = Input(shape=(None, Z_DIM + ACTION_DIM))
+        rnn_x = Input(shape=(None, self.z_dim + self.action_dim))
         lstm = LSTM(self.hidden_units, return_sequences=True, return_state=True)
-
+        
         lstm_output, _, _ = lstm(rnn_x)
         mdn = Dense(GAUSSIAN_MIXTURES * (3 * Z_DIM))(lstm_output)  # + discrete_dim
-
+        
         rnn = Model(rnn_x, mdn)
-
+        
         #### THE MODEL USED DURING PREDICTION
         state_input_h = Input(shape=(self.hidden_units,))
         state_input_c = Input(shape=(self.hidden_units,))
         state_inputs = [state_input_h, state_input_c]
         _, state_h, state_c = lstm(rnn_x, initial_state=[state_input_h, state_input_c])
-
+        
         forward = Model([rnn_x] + state_inputs, [state_h, state_c])
-
+        
         #### LOSS FUNCTION
-
+        
         def rnn_r_loss(y_true, y_pred):
             pi, mu, sigma = get_mixture_coef(y_pred)
-
+            
             result = tf_normal(y_true, mu, sigma, pi)
-
+            
             result = -K.log(result + 1e-8)
             result = K.mean(result, axis=(1, 2))  # mean over rollout length and z dim
-
+            
             return result
-
+        
         def rnn_kl_loss(y_true, y_pred):
             pi, mu, sigma = get_mixture_coef(y_pred)
             kl_loss = - 0.5 * K.mean(1 + K.log(K.square(sigma)) - K.square(mu) - K.square(sigma), axis=[1, 2, 3])
             return kl_loss
-
+        
         def rnn_loss(y_true, y_pred):
             return rnn_r_loss(y_true, y_pred)  # + rnn_kl_loss(y_true, y_pred)
-
+        
         rnn.compile(loss=rnn_loss, optimizer=Adam(), metrics=[rnn_r_loss, rnn_kl_loss])
-
+        
         return rnn, forward
-
+    
     def set_weights(self, filepath):
         self.model.load_weights(filepath)
-
-    def train(self, rnn_input, rnn_output, validation_split=0.2):
-        earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=5, verbose=1, mode='auto')
-        callbacks_list = [earlystop]
-
-        self.model.fit(rnn_input, rnn_output,
-                       shuffle=True,
-                       epochs=20,
-                       batch_size=32,
-                       validation_split=validation_split,
-                       callbacks=callbacks_list)
-
-        self.model.save_weights('./rnn/weights.h5')
-
+    
+    def train(self, num_files):
+        
+        train_generator = RNNDataGenerator(
+            num_files=num_files,
+            set_type="train",
+            batch_size=self.batch_size,
+            shuffle=True,
+        )
+        
+        validation_generator = RNNDataGenerator(
+            num_files=0,
+            set_type="valid",
+            batch_size=self.batch_size,
+            shuffle=True,
+        )
+        
+        earlystop = EarlyStopping(
+            monitor='val_loss',
+            min_delta=0.0001,
+            patience=5,
+            verbose=1,
+            mode='auto',
+        )
+        
+        # we are going to keep only the best model
+        mcp = ModelCheckpoint(
+            filepath='./rnn/weights_' + self.name + '.h5',
+            verbose=1,
+            save_best_only=True,
+        )
+        
+        ton = TerminateOnNaN()
+        
+        tensorboard = TensorBoard(
+            log_dir='./log/{}'.format(self.name),
+            write_graph=False,
+            write_grads=False,
+            write_images=False,
+        )
+        
+        lambda_callback = LambdaCallback(
+            on_epoch_begin=None,
+            on_epoch_end=None,
+            
+            on_batch_begin=None,
+            on_batch_end=None,
+            
+            on_train_begin=None,
+            on_train_end=None
+        )
+        
+        callbacks_list = [tensorboard, earlystop, mcp, ton, lambda_callback]
+        
+        print(self.name)
+        
+        self.model.summary()
+        
+        self.model.fit_generator(
+            generator = train_generator,
+            validation_data = validation_generator,
+            use_multiprocessing = False,
+            shuffle=False,
+            epochs=self.epochs,
+            max_queue_size = 256,
+            callbacks=callbacks_list
+        )
+        
+        # self.model.fit(rnn_input, rnn_output,
+        #                shuffle=True,
+        #                epochs=20,
+        #                batch_size=32,
+        #                validation_split=validation_split,
+        #                callbacks=callbacks_list)
+        
+        # self.model.save_weights('./rnn/weights.h5')
+    
     def save_weights(self, filepath):
         self.model.save_weights(filepath)

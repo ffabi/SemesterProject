@@ -1,34 +1,38 @@
 import keras
 import numpy as np
 import multiprocessing
+
+
 # TODO make one Datagenerator class to handle both VAE and RNN
 def train_set_counter(file_id):
-    new_data = np.load('./data/action_data_car_racing_' + str(file_id) + '.npz')["arr_0"]
-    data = np.array([item for obs in new_data for item in obs])
+    new_data = np.load("./data/rnn_output_car_racing_" + str(file_id) + ".npz")["arr_0"]
+    data = np.array([obs for obs in new_data])
     return data.shape[0]
 
+
 # https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
-class DataGenerator(keras.utils.Sequence):
+class RNNDataGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
     
     def __init__(self, num_files, set_type = "debug", batch_size = 64, shuffle = True):
         """Initialization"""
-    
+        
         self.batch_size = batch_size
         self.shuffle = shuffle
-    
+        
         self.num_files = num_files
         self.set_type = set_type
-        if set_type=="debug": print("Building statistics")
+        if set_type == "debug": print("Building statistics")
         self.statistics = self.__build_statistics(set_type).T
         self.total_frame_count = sum(self.statistics.T[1])
         if set_type == "debug":
             print("Building mapping")
-
+        
         self.mapping = None
         self.on_epoch_end()
-
-        self.current_frames = None
+        
+        self.current_input = None
+        self.current_output = None
         self.current_file_index = -1
     
     def __len__(self):
@@ -39,35 +43,42 @@ class DataGenerator(keras.utils.Sequence):
     def __getitem__(self, index):
         """Generate one batch of data"""
         
-        batch = []
+        input_batch = []
+        output_batch = []
         for description in self.mapping[index]:
             if self.current_file_index == description[0]:
-                batch.extend(self.current_frames[description[1]: description[2]])
+                input_batch.extend(self.current_input[description[1]: description[2]])
+                output_batch.extend(self.current_output[description[1]: description[2]])
             
             else:
-                self.current_frames = None
+                self.current_input = None
+                self.current_output = None
                 if self.set_type == "valid":
-                    file = np.load('./data/obs_valid_car_racing.npz')["arr_0"]
+                    input_file = np.load("./data/rnn_input_car_racing_valid.npz")["arr_0"]
+                    output_file = np.load("./data/rnn_output_car_racing_valid.npz")["arr_0"]
                 else:
-                    file = np.load('./data/obs_data_car_racing_' + str(description[0]) + '.npz')["arr_0"]
-                self.current_frames = np.array([item for obs in file for item in obs])
-                np.random.shuffle(self.current_frames)
-                batch.extend(self.current_frames[description[1]: description[2]])
+                    input_file = np.load("./data/rnn_input_car_racing_" + str(description[0]) + ".npz")["arr_0"]
+                    output_file = np.load("./data/rnn_output_car_racing_" + str(description[0]) + ".npz")["arr_0"]
+                
+                self.current_input = np.array([obs for obs in input_file])
+                input_batch.extend(self.current_input[description[1]: description[2]])
+                
+                self.current_output = np.array([obs for obs in output_file])
+                output_batch.extend(self.current_output[description[1]: description[2]])
+                
                 self.current_file_index = description[0]
-            
         
-        ret = np.array(batch)
+        ret_input = np.array(input_batch)
+        ret_output = np.array(output_batch)
         
+        # print(ret_input.shape)
         
-        # if len(batch) != self.batch_size:
-        #     print(ret.shape)
-        
-        return ret, ret
+        return ret_input, ret_output
     
     def __build_statistics(self, set_type):
-
-        if set_type== "train":
-            #count the train set using multiple threads so it's faster and the memory will be freed
+        
+        if set_type == "train":
+            # count the train set using multiple threads so it"s faster and the memory will be freed
             p = multiprocessing.Pool(5)
             results = p.map(train_set_counter, range(self.num_files))
             p.terminate()
@@ -79,9 +90,9 @@ class DataGenerator(keras.utils.Sequence):
             
             return array
         
-        elif set_type== "valid":
-            new_data = np.load('./data/obs_valid_car_racing.npz')["arr_0"]
-            data = np.array([item for obs in new_data for item in obs])
+        elif set_type == "valid":
+            new_data = np.load("./data/rnn_output_car_racing_valid.npz")["arr_0"]
+            data = np.array([obs for obs in new_data])
             return np.array([[0], [data.shape[0]]])
         
         else:
@@ -92,7 +103,7 @@ class DataGenerator(keras.utils.Sequence):
         if self.shuffle:
             np.random.shuffle(self.statistics)
             self.mapping = self.__build_mapping()
-            
+    
     
     def __build_mapping(self, debug = False):
         
@@ -162,11 +173,10 @@ class DataGenerator(keras.utils.Sequence):
         return np.array(mapping)  # [[(fileindex, start_frame_index, end_frame_index), ])] interval: [start, end)
 
 
-if __name__ == '__main__':
-
-    d = DataGenerator(10, "train", batch_size = 64)
+if __name__ == "__main__":
+    d = RNNDataGenerator(10, "train", batch_size = 32)
     print(d.total_frame_count)
     print(d.statistics)
     print(d.mapping)
-    # print(d.__getitem__(0)[0].shape)
-    
+    for i in range(d.__len__()):
+        d.__getitem__(i)
