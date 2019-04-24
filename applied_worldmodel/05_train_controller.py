@@ -419,9 +419,9 @@ def master():
 
 
 
-        if (t == 1):
+        if t == 1:
             best_reward_eval = avg_reward
-        if (t % eval_steps == 0): # evaluate on actual task at hand
+        if t % eval_steps == 0: # evaluate on actual task at hand
 
             prev_best_reward_eval = best_reward_eval
             model_params_quantized = np.array(es.current_param()).round(4)
@@ -431,7 +431,7 @@ def master():
             eval_log.append([t, reward_eval, model_params_quantized])
             with open(filename_log, 'wt') as out:
                 res = json.dump(eval_log, out)
-            if (len(eval_log) == 1 or reward_eval > best_reward_eval):
+            if len(eval_log) == 1 or reward_eval > best_reward_eval:
                 best_reward_eval = reward_eval
                 best_model_params_eval = model_params_quantized
             else:

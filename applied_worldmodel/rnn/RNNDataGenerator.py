@@ -174,9 +174,9 @@ class RNNDataGenerator(keras.utils.Sequence):
 
 
 if __name__ == "__main__":
-    d = RNNDataGenerator(10, "train", batch_size = 32)
+    d = RNNDataGenerator(10, "train", batch_size = 37)
     print(d.total_frame_count)
     print(d.statistics)
     print(d.mapping)
-    for i in range(d.__len__()):
-        d.__getitem__(i)
+    print("input shape: ", d.__getitem__(0)[0].shape)
+    print("output shape: ", d.__getitem__(0)[1].shape)

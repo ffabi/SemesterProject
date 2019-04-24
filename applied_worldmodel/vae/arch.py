@@ -6,7 +6,7 @@ from keras import backend as K
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint, TerminateOnNaN, LambdaCallback
 from keras.optimizers import Adam
 import datetime
-from DataGenerator import DataGenerator
+from vae.VAEDataGenerator import VAEDataGenerator
 
 class VAE:
     def __init__(self):
@@ -286,14 +286,14 @@ class VAE:
         vae_r_loss, vae_kl_loss, vae_loss = self.loss_generator()
         self.model.compile(optimizer=Adam(lr = self.learning_rate), loss = vae_loss,  metrics = [vae_r_loss, vae_kl_loss])
 
-        train_generator = DataGenerator(
+        train_generator = VAEDataGenerator(
             num_files = num_files,
             set_type = "train",
             batch_size = self.batch_size,
             shuffle = True,
         )
 
-        validation_generator = DataGenerator(
+        validation_generator = VAEDataGenerator(
             num_files = 0,
             set_type = "valid",
             batch_size = self.batch_size,

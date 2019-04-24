@@ -8,7 +8,7 @@ def train_set_counter(file_id):
     return data.shape[0]
 
 # https://stanford.edu/~shervine/blog/keras-how-to-generate-data-on-the-fly
-class DataGenerator(keras.utils.Sequence):
+class VAEDataGenerator(keras.utils.Sequence):
     """Generates data for Keras"""
     
     def __init__(self, num_files, set_type = "debug", batch_size = 64, shuffle = True):
