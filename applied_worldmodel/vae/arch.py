@@ -273,7 +273,7 @@ class VAE:
             self.kl_divider = 32768*2
         else:
             self.kl_divider *= self.beta
-            if epoch >= 26:
+            if epoch >= 26 or self.kl_divider < 128:
                 self.kl_divider = 128
                 
         print(self.kl_divider)

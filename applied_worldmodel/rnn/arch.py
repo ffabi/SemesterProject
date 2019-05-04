@@ -57,6 +57,7 @@ class RNN:
         self.z_dim = Z_DIM
         self.action_dim = ACTION_DIM
         self.hidden_units = 300
+        self.output_size = 0
         self.gaussian_mixtures = GAUSSIAN_MIXTURES
         self.input_dim = (self.z_dim + self.action_dim)
         self.learning_rate = 0.0001
@@ -73,8 +74,10 @@ class RNN:
 
         if self.type == "original":
             self.models = self._build_original()
+            self.output_size = self.hidden_units
         elif self.type == "simple_lstm":
             self.models = self._build_simple_lstm()
+            self.output_size = self.z_dim
         else:
             raise ValueError("Invalid network type")
 
