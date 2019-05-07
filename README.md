@@ -59,7 +59,9 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 
    ### Generate input for the RNN:
 
-1. `xvfb-run -a python3 03_generate_rnn_data.py --start_batch 0 --max_batch 9`
+1. `xvfb-run -a python3 03_generate_rnn_data.py --num_files 10`
+
+1. `xvfb-run -a python3 03_generate_rnn_data.py --num_files 10 --validation`
 
    ### Train the RNN:
 
