@@ -8,43 +8,66 @@
 - [Running hardmaru - WordlModels](#running-hardmaru-wordl-models)
 
 # Prerequisites
-This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker installed on the host machine
+This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker version 2 installed on the host machine
 
-# Create working directory and clone the repo
-`mkdir ./ffabi_shared_folder`
+# Reproducing the results
 
-`cd ffabi_shared_folder`
+   ### Create working directory and clone the repo
 
-`git clone https://github.com/ffabi/SemesterProject.git`
+1. `mkdir ffabi_shared_folder`
 
-# Pulling the image
-`docker pull ffabi/gym:10`
+1. `cd ffabi_shared_folder`
 
-or:
-# Building the image
-`cd SemesterProject/docker_setup`
-`docker build -f Dockerfile -t ffabi/gym:10 .`
-# Running the docker container
+1. `git clone https://github.com/ffabi/SemesterProject.git`
 
-`nvidia-docker create -p 8192:8192 -p 8193:22 -p 8194:8194 --name ffabi_gym -v $(pwd)/ffabi_shared_folder:/root/ffabi_shared_folder ffabi/gym:10`
+   ### Building the image:
 
-`nvidia-docker start ffabi_gym`
+1. `cd SemesterProject/docker_setup`
 
-# Attach to the container
-`docker exec -it ffabi_gym bash`
+1. `docker build -f Dockerfile -t ffabi/gym:10 .`
 
-# Running AppliedDataSciencePartners - WorldModels
-`mkdir data`
+1. `cd ../../..`
 
-`xvfb-run -a python3 01_generate_random_data.py --total_episodes 640 --file_size 64 --start_batch 0`
+    ### Running the docker container:
 
-`xvfb-run -a python3 02_train_vae.py --num_files 10`
+1. `nvidia-docker create -p 8192:8192 -p 8193:22 -p 8194:8194 --name ffabi_gym -v $(pwd)/ffabi_shared_folder:/root/ffabi_shared_folder ffabi/gym:10`
 
-`xvfb-run -a python3 03_generate_rnn_data.py --start_batch 0 --max_batch 9`
+1. `nvidia-docker start ffabi_gym`
 
-`xvfb-run -a python3 04_train_rnn.py --start_batch 0 --max_batch 0 --new_model`
+    ### Attach to the container:
 
-`xvfb-run -a python3 05_train_controller.py car_racing --num_worker 1 --num_worker_trial 2 --num_episode 4 --max_length 1000 --eval_steps 25`
+1. `docker exec -it ffabi_gym bash`
+
+    ### Running AppliedDataSciencePartners - WorldModels:
+
+1. `cd ffabi_shared_folder/SemesterProject/applied_worldmodel`
+
+1. `mkdir data log`
+
+    ### Generate random rollouts:
+    I recommend to use screen:
+    
+1. `screen -R train` to enter screen 'train' (press Ctrl+A and Ctrl+D to exit)
+ 
+1. `xvfb-run -a python3 01_generate_random_data.py`
+
+1. `xvfb-run -a python3 01_generate_random_data.py --validation`
+
+    ### Train the VAE:
+
+1. `xvfb-run -a python3 02_train_vae.py --num_files 10`
+
+   ### Generate input for the RNN:
+
+1. `xvfb-run -a python3 03_generate_rnn_data.py --start_batch 0 --max_batch 9`
+
+   ### Train the RNN:
+
+1. `xvfb-run -a python3 04_train_rnn.py --start_batch 0 --max_batch 0 --new_model`
+
+   ### Train the Controller:
+
+1. `xvfb-run -a python3 05_train_controller.py car_racing --num_worker 1 --num_worker_trial 2 --num_episode 4 --max_length 1000 --eval_steps 25`
 
 Source:
 <https://medium.com/applied-data-science/how-to-build-your-own-world-model-using-python-and-keras-64fb388ba459>

@@ -68,7 +68,7 @@ class VAEDataGenerator(keras.utils.Sequence):
 
         if set_type== "train":
             #count the train set using multiple threads so it's faster and the memory will be freed
-            p = multiprocessing.Pool(5)
+            p = multiprocessing.Pool(2)
             results = p.map(train_set_counter, range(self.num_files))
             p.terminate()
             p.join()

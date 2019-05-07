@@ -14,7 +14,7 @@ import argparse
 def main(args):
     env_name = args.env_name
     total_episodes = args.total_episodes
-    start_batch = args.start_batch
+    start_file = args.start_file
     time_steps = args.time_steps
     render = args.render
     file_size = args.file_size
@@ -35,15 +35,15 @@ def main(args):
 
         env = make_env(current_env_name)
         s = 0
-        batch = start_batch
+        file = start_file
 
-        batch_size = min(file_size, total_episodes)
+        file_size = min(file_size, total_episodes)
 
         while s < total_episodes:
             obs_data = []
             action_data = []
 
-            for i_episode in range(batch_size):
+            for i_episode in range(file_size):
                 print("-----")
                 observation = env.reset()
                 observation = config.adjust_obs(observation)
@@ -75,12 +75,12 @@ def main(args):
                 obs_data.append(obs_sequence)
                 action_data.append(action_sequence)
 
-                print("File {} Episode {} finished after {} timesteps".format(batch, i_episode, time + 1))
+                print("File {} Episode {} finished after {} timesteps".format(file, i_episode, time + 1))
                 print("Current dataset contains {} observations".format(sum(map(len, obs_data))))
 
                 s = s + 1
 
-            print("Saving dataset for batch {}".format(batch))
+            print("Saving dataset for batch {}".format(file))
 
             if validation:
                 np.savez_compressed("./data/obs_valid_" + current_env_name, obs_data)
@@ -90,10 +90,10 @@ def main(args):
 
                 # obs_data, action_data = shuffle(obs_data, action_data)
 
-                np.savez_compressed("./data/obs_data_" + current_env_name + "_" + str(batch), obs_data)
-                np.savez_compressed("./data/action_data_" + current_env_name + "_" + str(batch), action_data)
+                np.savez_compressed("./data/obs_data_" + current_env_name + "_" + str(file), obs_data)
+                np.savez_compressed("./data/action_data_" + current_env_name + "_" + str(file), action_data)
 
-            batch = batch + 1
+            file = file + 1
 
         env.close()
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create new training data")
     parser.add_argument("--env_name", default="car_racing", type=str, help="name of environment")
     parser.add_argument("--total_episodes", type=int, default=640, help="total number of episodes to generate")
-    parser.add_argument("--start_batch", type=int, default=0, help="start_batch number")
+    parser.add_argument("--start_file", type=int, default=0, help="start_batch number")
     parser.add_argument("--time_steps", type=int, default=230, help="how many timesteps at start of episode?")
     parser.add_argument("--start_frame", type=int, default=30, help="how many timesteps at start of episode?")
     parser.add_argument("--render", action="store_true", help="render the env as data is generated")

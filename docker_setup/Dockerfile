@@ -29,6 +29,9 @@ RUN echo "root:init" | chpasswd
 
 RUN pip3 install --upgrade tornado==5.1.1
 RUN pip3 install matplotlib
+RUN pip3 install numpy==1.16.1 # 1.16.3 has a bug now, "Object arrays cannot be loaded when allow_pickle=False" is the symptom
+
+RUN apt install -y screen
 
 WORKDIR /root
 
