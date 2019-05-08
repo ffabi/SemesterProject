@@ -8,7 +8,7 @@
 - [Running hardmaru - WordlModels](#running-hardmaru-wordl-models)
 
 # Prerequisites
-This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker version 2 installed on the host machine
+This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker version 2 installed on the host machine. The versions of the Python packages can be seen in requirements.txt, if something is not working as intended, try to install the specified versions by running `pip3 install -r requirements.txt`
 
 # Reproducing the results
 
