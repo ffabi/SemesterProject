@@ -8,7 +8,7 @@
 - [Running hardmaru - WordlModels](#running-hardmaru-wordl-models)
 
 # Prerequisites
-This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker version 2 installed on the host machine. The versions of the Python packages can be seen in requirements.txt, if something is not working as intended, try to install the specified versions by running `pip3 install -r requirements.txt`
+This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-docker version 2 installed on the host machine
 
 # Reproducing the results
 
@@ -27,6 +27,8 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
 1. `docker build -f Dockerfile -t ffabi/gym:10 .`
 
 1. `cd ../../..`
+
+    Or pull from Dockerhub: `docker pull ffabi/gym:10`
 
     ### Running the docker container:
 
@@ -70,6 +72,9 @@ This specific image needs a CUDA capable GPU with CUDA version 10.0 and nvidia-d
    ### Train the Controller:
 
 1. `xvfb-run -a python3 05_train_controller.py car_racing --num_worker 1 --num_worker_trial 2 --num_episode 4 --max_length 1000 --eval_steps 25`
+
+  ###  Test your agent
+1. `python3 model.py car_racing --filename controller.json --render_mode`
 
 Source:
 <https://medium.com/applied-data-science/how-to-build-your-own-world-model-using-python-and-keras-64fb388ba459>
