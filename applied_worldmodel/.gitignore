@@ -5,5 +5,3 @@ zoo/
 videos/
 data/*
 history.txt
-vae/weights.h5
-rnn/weights.h5
